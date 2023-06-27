@@ -55,8 +55,7 @@ class TiticacaBase(models.ModelBase, models.TimestampMixin):
 
     __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8'}
     __table_initialized__ = False
-    __protected_attributes__ = set([
-        "created_at", "updated_at", "deleted_at", "deleted"])
+    __protected_attributes__ = {"created_at", "updated_at", "deleted_at", "deleted"}
 
     def save(self, session=None):
         from titicaca.db.sqlalchemy import api as db_api
@@ -101,121 +100,13 @@ class TiticacaBase(models.ModelBase, models.TimestampMixin):
         return d
 
 
-class Image(BASE, TiticacaBase):
-    """Represents an image in the datastore."""
-    __tablename__ = 'images'
-    __table_args__ = (Index('checksum_image_idx', 'checksum'),
-                      Index('visibility_image_idx', 'visibility'),
-                      Index('ix_images_deleted', 'deleted'),
-                      Index('owner_image_idx', 'owner'),
-                      Index('created_at_image_idx', 'created_at'),
-                      Index('updated_at_image_idx', 'updated_at'),
-                      Index('os_hidden_image_idx', 'os_hidden'),
-                      Index('os_hash_value_image_idx', 'os_hash_value'))
-
-    id = Column(String(36), primary_key=True,
-                default=lambda: str(uuid.uuid4()))
-    name = Column(String(255))
-    disk_format = Column(String(20))
-    container_format = Column(String(20))
-    size = Column(BigInteger().with_variant(Integer, "sqlite"))
-    virtual_size = Column(BigInteger().with_variant(Integer, "sqlite"))
-    status = Column(String(30), nullable=False)
-    visibility = Column(Enum('private', 'public', 'shared', 'community',
-                        name='image_visibility'), nullable=False,
-                        server_default='shared')
-    checksum = Column(String(32))
-    os_hash_algo = Column(String(64))
-    os_hash_value = Column(String(128))
-    min_disk = Column(Integer, nullable=False, default=0)
-    min_ram = Column(Integer, nullable=False, default=0)
-    owner = Column(String(255))
-    protected = Column(Boolean, nullable=False, default=False,
-                       server_default=sql.expression.false())
-    os_hidden = Column(Boolean, nullable=False, default=False,
-                       server_default=sql.expression.false())
-
-
-class ImageProperty(BASE, TiticacaBase):
-    """Represents an image properties in the datastore."""
-    __tablename__ = 'image_properties'
-    __table_args__ = (Index('ix_image_properties_image_id', 'image_id'),
-                      Index('ix_image_properties_deleted', 'deleted'),
-                      UniqueConstraint('image_id',
-                                       'name',
-                                       name='ix_image_properties_'
-                                            'image_id_name'),)
-
-    id = Column(Integer, primary_key=True)
-    image_id = Column(String(36), ForeignKey('images.id'),
-                      nullable=False)
-    image = relationship(Image, backref=backref('properties'))
-
-    name = Column(String(255), nullable=False)
-    value = Column(Text)
-
-
-class ImageTag(BASE, TiticacaBase):
-    """Represents an image tag in the datastore."""
-    __tablename__ = 'image_tags'
-    __table_args__ = (Index('ix_image_tags_image_id', 'image_id'),
-                      Index('ix_image_tags_image_id_tag_value',
-                            'image_id',
-                            'value'),)
-
-    id = Column(Integer, primary_key=True, nullable=False)
-    image_id = Column(String(36), ForeignKey('images.id'), nullable=False)
-    image = relationship(Image, backref=backref('tags'))
-    value = Column(String(255), nullable=False)
-
-
-class ImageLocation(BASE, TiticacaBase):
-    """Represents an image location in the datastore."""
-    __tablename__ = 'image_locations'
-    __table_args__ = (Index('ix_image_locations_image_id', 'image_id'),
-                      Index('ix_image_locations_deleted', 'deleted'),)
-
-    id = Column(Integer, primary_key=True, nullable=False)
-    image_id = Column(String(36), ForeignKey('images.id'), nullable=False)
-    image = relationship(Image, backref=backref('locations'))
-    value = Column(Text(), nullable=False)
-    meta_data = Column(JSONEncodedDict(), default={})
-    status = Column(String(30), server_default='active', nullable=False)
-
-
-class ImageMember(BASE, TiticacaBase):
-    """Represents an image members in the datastore."""
-    __tablename__ = 'image_members'
-    unique_constraint_key_name = 'image_members_image_id_member_deleted_at_key'
-    __table_args__ = (Index('ix_image_members_deleted', 'deleted'),
-                      Index('ix_image_members_image_id', 'image_id'),
-                      Index('ix_image_members_image_id_member',
-                            'image_id',
-                            'member'),
-                      UniqueConstraint('image_id',
-                                       'member',
-                                       'deleted_at',
-                                       name=unique_constraint_key_name),)
-
-    id = Column(Integer, primary_key=True)
-    image_id = Column(String(36), ForeignKey('images.id'),
-                      nullable=False)
-    image = relationship(Image, backref=backref('members'))
-
-    member = Column(String(255), nullable=False)
-    can_share = Column(Boolean, nullable=False, default=False)
-    status = Column(String(20), nullable=False, default="pending",
-                    server_default='pending')
-
-
 class Task(BASE, TiticacaBase):
-    """Represents an task in the datastore"""
+    """Represents a task in the datastore"""
     __tablename__ = 'tasks'
     __table_args__ = (Index('ix_tasks_type', 'type'),
                       Index('ix_tasks_status', 'status'),
                       Index('ix_tasks_owner', 'owner'),
                       Index('ix_tasks_deleted', 'deleted'),
-                      Index('ix_tasks_image_id', 'image_id'),
                       Index('ix_tasks_updated_at', 'updated_at'))
 
     id = Column(String(36), primary_key=True,
@@ -224,7 +115,6 @@ class Task(BASE, TiticacaBase):
     status = Column(String(30), nullable=False)
     owner = Column(String(255), nullable=False)
     expires_at = Column(DateTime, nullable=True)
-    image_id = Column(String(36), nullable=True)
     request_id = Column(String(64), nullable=True)
     user_id = Column(String(64), nullable=True)
 
@@ -247,16 +137,3 @@ class TaskInfo(BASE, models.ModelBase):
     result = Column(JSONEncodedDict())
     message = Column(Text)
 
-
-def register_models(engine):
-    """Create database tables for all models with the given engine."""
-    models = (Image, ImageProperty, ImageMember)
-    for model in models:
-        model.metadata.create_all(engine)
-
-
-def unregister_models(engine):
-    """Drop database tables for all models with the given engine."""
-    models = (Image, ImageProperty)
-    for model in models:
-        model.metadata.drop_all(engine)

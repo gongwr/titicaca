@@ -23,21 +23,3 @@ def translate(value, user_locale=None):
 
 def get_available_languages(domain=DOMAIN):
     return i18n.get_available_languages(domain)
-
-
-# i18n log translation functions are deprecated. While removing the invocations
-# requires a lot of reviewing effort, we decide to make it as no-op functions.
-def _LI(msg):
-    return msg
-
-
-def _LW(msg):
-    return msg
-
-
-def _LE(msg):
-    return msg
-
-
-def _LC(msg):
-    return msg

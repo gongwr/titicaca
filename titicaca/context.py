@@ -1,34 +1,26 @@
 # Copyright 2011-2014 OpenStack Foundation
 # All Rights Reserved.
-# Copyright (c) 2023 WenRui Gong
-# All rights reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
 
 import copy
 
-from keystoneauth1 import session
-from keystoneauth1 import token_endpoint
 from oslo_config import cfg
 from oslo_context import context
 
 from titicaca.api import policy
 
 CONF = cfg.CONF
-
-
-def get_ksa_client(context):
-    """Returns a keystoneauth Adapter using token from context.
-
-    This will return a simple keystoneauth adapter that can be used to
-    make requests against a remote service using the token provided
-    (and already authenticated) from the user and stored in a
-    RequestContext.
-
-    :param context: User request context
-    :returns: keystoneauth1 Adapter object
-    """
-    auth = token_endpoint.Token(CONF.keystone_authtoken.identity_uri,
-                                context.auth_token)
-    return session.Session(auth=auth)
 
 
 class RequestContext(context.RequestContext):

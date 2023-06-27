@@ -11,21 +11,17 @@
 Titicaca Management Utility
 """
 
-# FIXME(sirp): When we have titicaca-admin we can consider merging this into it
-# Perhaps for consistency with Nova, we would then rename titicaca-admin ->
-# titicaca-manage (or the other way around)
-
 import os
 import sys
 import time
 
 # If ../titicaca/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
-possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
+BASE_PATH = os.path.normpath(os.path.join(os.path.abspath(__file__),
                                    os.pardir,
-                                   os.pardir))
-if os.path.exists(os.path.join(possible_topdir, 'titicaca', '__init__.py')):
-    sys.path.insert(0, possible_topdir)
+                                   os.pardir, os.pardir))
+if os.path.exists(os.path.join(BASE_PATH, 'titicaca', '__init__.py')):
+    sys.path.insert(0, BASE_PATH)
 
 from alembic import command as alembic_command
 
@@ -39,7 +35,7 @@ from titicaca.common import exception
 from titicaca import context
 from titicaca.db import migration as db_migration
 from titicaca.db.sqlalchemy import alembic_migrations
-from titicaca.db.sqlalchemy.alembic_migrations import data_migrations
+from titicaca.db.sqlalchemy.alembic_migrations import alembic_data_migration as dbm
 from titicaca.db.sqlalchemy import api as db_api
 from titicaca.db.sqlalchemy import metadata
 from titicaca.i18n import _
@@ -101,7 +97,7 @@ class DbCommands(object):
             print(_('Your database is not up to date. '
                     'Your first step is to run `titicaca-manage db expand`.'))
             sys.exit(3)
-        elif data_migrations.has_pending_migrations(db_api.get_engine()):
+        elif dbm.has_pending_migrations(db_api.get_engine()):
             print(_('Your database is not up to date. '
                     'Your next step is to run `titicaca-manage db migrate`.'))
             sys.exit(4)
@@ -132,7 +128,7 @@ class DbCommands(object):
         """Perform a complete (offline) database migration"""
         global USE_TRIGGERS
 
-        # This flags let's us bypass trigger setup & teardown for non-rolling
+        # This flags let us bypass trigger setup & teardown for non-rolling
         # upgrades. We set this as a global variable immediately before handing
         # off to alembic, because we can't pass arguments directly to
         # migrations that depend on it.
@@ -240,7 +236,7 @@ class DbCommands(object):
                        'Run database expansion first using '
                        '"titicaca-manage db expand"'))
 
-        if data_migrations.has_pending_migrations(db_api.get_engine()):
+        if dbm.has_pending_migrations(db_api.get_engine()):
             sys.exit(_('Database contraction did not run. Database '
                        'contraction cannot be run before data migration is '
                        'complete. Run data migration using "titicaca-manage db '
@@ -276,8 +272,8 @@ class DbCommands(object):
                        'run before database expansion. Run database '
                        'expansion first using "titicaca-manage db expand"'))
 
-        if data_migrations.has_pending_migrations(db_api.get_engine()):
-            rows_migrated = data_migrations.migrate(db_api.get_engine())
+        if dbm.has_pending_migrations(db_api.get_engine()):
+            rows_migrated = dbm.migrate(db_api.get_engine())
             print(_('Migrated %s rows') % rows_migrated)
         else:
             print(_('Database migration is up to date. No migration needed.'))
@@ -314,7 +310,7 @@ class DbCommands(object):
         metadata.db_export_metadefs(db_api.get_engine(),
                                     path)
 
-    def _purge(self, age_in_days, max_rows, purge_images_only=False):
+    def _purge(self, age_in_days, max_rows):
         try:
             age_in_days = int(age_in_days)
         except ValueError:
@@ -333,11 +329,7 @@ class DbCommands(object):
             sys.exit(_("Minimal rows limit is 1."))
         ctx = context.get_admin_context(show_deleted=True)
         try:
-            if purge_images_only:
-                db_api.purge_deleted_rows_from_images(ctx, age_in_days,
-                                                      max_rows)
-            else:
-                db_api.purge_deleted_rows(ctx, age_in_days, max_rows)
+            db_api.purge_deleted_rows(ctx, age_in_days, max_rows)
         except exception.Invalid as exc:
             sys.exit(exc.msg)
         except db_exc.DBReferenceError:
@@ -352,13 +344,6 @@ class DbCommands(object):
         """Purge deleted rows older than a given age from titicaca tables."""
         self._purge(age_in_days, max_rows)
 
-    @args('--age_in_days', type=int,
-          help='Purge deleted rows older than age in days')
-    @args('--max_rows', type=int,
-          help='Limit number of records to delete')
-    def purge_images_table(self, age_in_days=180, max_rows=100):
-        """Purge deleted rows older than a given age from images table."""
-        self._purge(age_in_days, max_rows, purge_images_only=True)
 
 
 class DbLegacyCommands(object):

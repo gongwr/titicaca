@@ -10,12 +10,12 @@
             "prefix": "hw_"
         },
         {
-            "name": "OS::Cinder::Volume",
+            "name": "OS::Baikal::Volume",
             "prefix": "hw_",
             "properties_target": "image"
         },
         {
-            "name": "OS::Nova::Flavor",
+            "name": "OS::Amazon::Flavor",
             "prefix": "hw:"
         }
     ],

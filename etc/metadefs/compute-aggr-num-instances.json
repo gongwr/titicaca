@@ -1,11 +1,11 @@
 {
     "namespace": "OS::Compute::AggregateNumInstancesFilter",
     "display_name": "Instances per Host",
-    "description": "Properties related to the Nova scheduler filter AggregateNumInstancesFilter. Filters aggregate hosts by the number of running instances on it. Hosts in the aggregate with too many instances will be filtered out. The filter must be enabled in the Nova scheduler to use these properties.",    "visibility": "public",
+    "description": "Properties related to the Amazon scheduler filter AggregateNumInstancesFilter. Filters aggregate hosts by the number of running instances on it. Hosts in the aggregate with too many instances will be filtered out. The filter must be enabled in the Amazon scheduler to use these properties.",    "visibility": "public",
     "protected": false,
     "resource_type_associations": [
         {
-            "name": "OS::Nova::Aggregate"
+            "name": "OS::Amazon::Aggregate"
         }
     ],
     "properties": {

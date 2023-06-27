@@ -19,5 +19,5 @@ db_options.set_defaults(cfg.CONF)
 # Migration-related constants
 EXPAND_BRANCH = 'expand'
 CONTRACT_BRANCH = 'contract'
-CURRENT_RELEASE = 'yoga'
-ALEMBIC_INIT_VERSION = 'liberty'
+CURRENT_RELEASE = 'bravo'
+ALEMBIC_INIT_VERSION = 'alpha'

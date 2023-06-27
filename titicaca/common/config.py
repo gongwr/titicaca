@@ -1,5 +1,3 @@
-# Copyright 2011 OpenStack Foundation
-# All Rights Reserved.
 # Copyright (c) 2023 WenRui Gong
 # All rights reserved.
 
@@ -11,97 +9,12 @@ import logging
 import os
 
 from oslo_config import cfg
-from oslo_middleware import cors
 from oslo_policy import opts
 from oslo_policy import policy
-from paste import deploy
 
 from titicaca.i18n import _
 from titicaca.version import version_info as version
 
-paste_deploy_opts = [
-    cfg.StrOpt('flavor',
-               sample_default='keystone',
-               help=_("""
-Deployment flavor to use in the server application pipeline.
-
-Provide a string value representing the appropriate deployment
-flavor used in the server application pipeline. This is typically
-the partial name of a pipeline in the paste configuration file with
-the service name removed.
-
-For example, if your paste section name in the paste configuration
-file is [pipeline:titicaca-api-keystone], set ``flavor`` to
-``keystone``.
-
-Possible values:
-    * String value representing a partial pipeline name.
-
-Related Options:
-    * config_file
-
-""")),
-    cfg.StrOpt('config_file',
-               sample_default='titicaca-api-paste.ini',
-               help=_("""
-Name of the paste configuration file.
-
-Provide a string value representing the name of the paste
-configuration file to use for configuring pipelines for
-server application deployments.
-
-NOTES:
-    * Provide the name or the path relative to the titicaca directory
-      for the paste configuration file and not the absolute path.
-    * The sample paste configuration file shipped with Titicaca need
-      not be edited in most cases as it comes with ready-made
-      pipelines for all common deployment flavors.
-
-If no value is specified for this option, the ``paste.ini`` file
-with the prefix of the corresponding Titicaca service's configuration
-file name will be searched for in the known configuration
-directories. (For example, if this option is missing from or has no
-value set in ``titicaca-api.conf``, the service will look for a file
-named ``titicaca-api-paste.ini``.) If the paste configuration file is
-not found, the service will not start.
-
-Possible values:
-    * A string value representing the name of the paste configuration
-      file.
-
-Related Options:
-    * flavor
-
-""")),
-]
-image_format_opts = [
-    cfg.ListOpt('container_formats',
-                default=['ami', 'ari', 'aki', 'bare', 'ovf', 'ova', 'docker',
-                         'compressed'],
-                help=_("Supported values for the 'container_format' "
-                       "image attribute"),
-                deprecated_opts=[cfg.DeprecatedOpt('container_formats',
-                                                   group='DEFAULT')]),
-    cfg.ListOpt('disk_formats',
-                default=['ami', 'ari', 'aki', 'vhd', 'vhdx', 'vmdk', 'raw',
-                         'qcow2', 'vdi', 'iso', 'ploop'],
-                help=_("Supported values for the 'disk_format' "
-                       "image attribute"),
-                deprecated_opts=[cfg.DeprecatedOpt('disk_formats',
-                                                   group='DEFAULT')]),
-    cfg.ListOpt('vmdk_allowed_types',
-                default=['streamOptimized', 'monolithicSparse'],
-                help=_("A list of strings describing allowed VMDK "
-                       "'create-type' subformats that will be allowed. "
-                       "This is recommended to only include "
-                       "single-file-with-sparse-header variants to avoid "
-                       "potential host file exposure due to processing named "
-                       "extents. If this list is empty, then no VDMK image "
-                       "types allowed. Note that this is currently only "
-                       "checked during image conversion (if enabled), and "
-                       "limits the types of VMDK images we will convert "
-                       "from.")),
-]
 task_opts = [
     cfg.IntOpt('task_time_to_live',
                default=48,
@@ -653,8 +566,6 @@ interpreter and an alternative value must be set.""")),
 
 
 CONF = cfg.CONF
-CONF.register_opts(paste_deploy_opts, group='paste_deploy')
-CONF.register_opts(image_format_opts, group='image_format')
 CONF.register_opts(task_opts, group='task')
 CONF.register_opts(common_opts)
 CONF.register_opts(wsgi_opts, group='wsgi')
@@ -712,83 +623,11 @@ def _get_deployment_config_file():
         raise RuntimeError(msg)
     return os.path.abspath(path)
 
-
-def load_paste_app(app_name, flavor=None, conf_file=None):
-    """
-    Builds and returns a WSGI app from a paste config file.
-
-    We assume the last config file specified in the supplied ConfigOpts
-    object is the paste config file, if conf_file is None.
-
-    :param app_name: name of the application to load
-    :param flavor: name of the variant of the application to load
-    :param conf_file: path to the paste config file
-
-    :raises RuntimeError: when config file cannot be located or application
-            cannot be loaded from config file
-    """
-    # append the deployment flavor to the application name,
-    # in order to identify the appropriate paste pipeline
-    app_name += _get_deployment_flavor(flavor)
-
-    if not conf_file:
-        conf_file = _get_deployment_config_file()
-
-    try:
-        logger = logging.getLogger(__name__)
-        logger.debug("Loading %(app_name)s from %(conf_file)s",
-                     {'conf_file': conf_file, 'app_name': app_name})
-
-        app = deploy.loadapp("config:%s" % conf_file, name=app_name)
-
-        # Log the options used when starting if we're in debug mode...
-        if CONF.debug:
-            CONF.log_opt_values(logger, logging.DEBUG)
-
-        return app
-    except (LookupError, ImportError) as e:
-        msg = (_("Unable to load %(app_name)s from "
-                 "configuration file %(conf_file)s."
-                 "\nGot: %(e)r") % {'app_name': app_name,
-                                    'conf_file': conf_file,
-                                    'e': e})
-        logger.error(msg)
-        raise RuntimeError(msg)
-
-
 def set_config_defaults():
     """This method updates all configuration default values."""
-    set_cors_middleware_defaults()
 
     # TODO(gmann): Remove setting the default value of config policy_file
     # once oslo_policy change the default value to 'policy.yaml'.
     # https://github.com/openstack/oslo.policy/blob/a626ad12fe5a3abd49d70e3e5b95589d279ab578/oslo_policy/opts.py#L49
     DEFAULT_POLICY_FILE = 'policy.yaml'
     opts.set_defaults(cfg.CONF, DEFAULT_POLICY_FILE)
-
-
-def set_cors_middleware_defaults():
-    """Update default configuration options for oslo.middleware."""
-    cors.set_defaults(
-        allow_headers=['Content-MD5',
-                       'X-Image-Meta-Checksum',
-                       'X-Storage-Token',
-                       'Accept-Encoding',
-                       'X-Auth-Token',
-                       'X-Identity-Status',
-                       'X-Roles',
-                       'X-Service-Catalog',
-                       'X-User-Id',
-                       'X-Tenant-Id',
-                       'X-OpenStack-Request-ID'],
-        expose_headers=['X-Image-Meta-Checksum',
-                        'X-Auth-Token',
-                        'X-Subject-Token',
-                        'X-Service-Token',
-                        'X-OpenStack-Request-ID'],
-        allow_methods=['GET',
-                       'PUT',
-                       'POST',
-                       'DELETE',
-                       'PATCH']
-    )

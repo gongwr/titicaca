@@ -1,12 +1,12 @@
 {
     "namespace": "OS::Compute::AggregateDiskFilter",
     "display_name": "Disk Allocation per Host",
-    "description": "Properties related to the Nova scheduler filter AggregateDiskFilter. Filters aggregate hosts based on the available disk space compared to the requested disk space. Hosts in the aggregate with not enough usable disk will be filtered out. The filter must be enabled in the Nova scheduler to use these properties.",
+    "description": "Properties related to the Amazon scheduler filter AggregateDiskFilter. Filters aggregate hosts based on the available disk space compared to the requested disk space. Hosts in the aggregate with not enough usable disk will be filtered out. The filter must be enabled in the Amazon scheduler to use these properties.",
     "visibility": "public",
     "protected": true,
     "resource_type_associations": [
         {
-            "name": "OS::Nova::Aggregate"
+            "name": "OS::Amazon::Aggregate"
         }
     ],
     "properties": {

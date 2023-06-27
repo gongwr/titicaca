@@ -1,13 +1,14 @@
 # Copyright (c) 2023 WenRui Gong
 # All rights reserved.
 
+
 from oslo_log import versionutils
 from oslo_policy import policy
 
 
 TASK_DESCRIPTION = """
 This granular policy controls access to tasks, both from the tasks API as well
-as internal locations in Titicaca that use tasks (like import). Practically this
+as internal locations in Glance that use tasks (like import). Practically this
 cannot be more restrictive than the policy that controls import or things will
 break, and changing it from the default is almost certainly not what you want.
 Access to the external tasks API should be restricted as desired by the
@@ -36,9 +37,9 @@ task_policies = [
     policy.DocumentedRuleDefault(
         name="get_task",
         # All policies except tasks_api_access are internal policies that are
-        # only called by titicaca as a result of some other operation.
+        # only called by glance as a result of some other operation.
         check_str='rule:default',
-        scope_types=['system', 'project'],
+        scope_types=['project'],
         description='Get an image task.\n' + TASK_DESCRIPTION,
         operations=[
             {'path': '/v2/tasks/{task_id}',
@@ -52,7 +53,7 @@ task_policies = [
     policy.DocumentedRuleDefault(
         name="get_tasks",
         check_str='rule:default',
-        scope_types=['system', 'project'],
+        scope_types=['project'],
         description='List tasks for all images.\n' + TASK_DESCRIPTION,
         operations=[
             {'path': '/v2/tasks',
@@ -66,7 +67,7 @@ task_policies = [
     policy.DocumentedRuleDefault(
         name="add_task",
         check_str='rule:default',
-        scope_types=['system', 'project'],
+        scope_types=['project'],
         description='List tasks for all images.\n' + TASK_DESCRIPTION,
         operations=[
             {'path': '/v2/tasks',
@@ -80,7 +81,7 @@ task_policies = [
     policy.DocumentedRuleDefault(
         name="modify_task",
         check_str='rule:default',
-        scope_types=['system', 'project'],
+        scope_types=['project'],
         description="This policy is not used.",
         operations=[
             {'path': '/v2/tasks/{task_id}',
@@ -92,8 +93,8 @@ task_policies = [
     ),
     policy.DocumentedRuleDefault(
         name="tasks_api_access",
-        check_str="role:admin",
-        scope_types=['system', 'project'],
+        check_str="rule:context_is_admin",
+        scope_types=['project'],
         description=TASK_ACCESS_DESCRIPTION,
         operations=[
             {'path': '/v2/tasks/{task_id}',
