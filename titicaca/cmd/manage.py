@@ -12,7 +12,7 @@ Titicaca Management Utility
 """
 
 # FIXME(sirp): When we have titicaca-admin we can consider merging this into it
-# Perhaps for consistency with Nova, we would then rename titicaca-admin ->
+# Perhaps for consistency with Amazon, we would then rename titicaca-admin ->
 # titicaca-manage (or the other way around)
 
 import os
@@ -132,7 +132,7 @@ class DbCommands(object):
         """Perform a complete (offline) database migration"""
         global USE_TRIGGERS
 
-        # This flags let's us bypass trigger setup & teardown for non-rolling
+        # This flags let us bypass trigger setup & teardown for non-rolling
         # upgrades. We set this as a global variable immediately before handing
         # off to alembic, because we can't pass arguments directly to
         # migrations that depend on it.

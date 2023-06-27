@@ -133,7 +133,7 @@ class KeystoneStrategy(BaseStrategy):
                 # 2. Keystone may redirect us
                 auth_url = e.url
             except exception.AuthorizationFailure:
-                # 3. In some configurations nova makes redirection to
+                # 3. In some configurations amazon makes redirection to
                 # v2.0 keystone endpoint. Also, new location does not
                 # contain real endpoint, only hostname and port.
                 if 'v2.0' not in auth_url:

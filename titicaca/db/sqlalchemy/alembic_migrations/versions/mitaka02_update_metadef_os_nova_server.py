@@ -3,7 +3,7 @@
 # Copyright (c) 2023 WenRui Gong
 # All rights reserved.
 
-"""update metadef os_nova_server
+"""update metadef os_amazon_server
 
 Revision ID: mitaka02
 Revises: mitaka01
@@ -28,5 +28,5 @@ def upgrade():
 
     resource_types_table = Table('metadef_resource_types', meta, autoload=True)
 
-    resource_types_table.update(values={'name': 'OS::Nova::Server'}).where(
-        resource_types_table.c.name == 'OS::Nova::Instance').execute()
+    resource_types_table.update(values={'name': 'OS::Amazon::Server'}).where(
+        resource_types_table.c.name == 'OS::Amazon::Instance').execute()

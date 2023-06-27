@@ -6,7 +6,7 @@
     "protected": true,
     "resource_type_associations": [
         {
-            "name": "OS::Nova::Flavor",
+            "name": "OS::Amazon::Flavor",
             "prefix": "hw:"
         },
         {
@@ -14,7 +14,7 @@
             "prefix": "hw_"
         },
         {
-            "name": "OS::Cinder::Volume",
+            "name": "OS::Baikal::Volume",
             "prefix": "hw_",
             "properties_target": "image"
         }
@@ -22,7 +22,7 @@
     "properties": {
         "mem_page_size": {
             "title": "Size of memory page",
-            "description": "Page size to be used for Guest memory backing. Value can be specified as <number><unit> (i.e.: 2MB, 1GB) or 'any', 'small', 'large'. If this property is set in Image metadata then only 'any' and 'large' values are accepted in Flavor metadata by Nova API.",
+            "description": "Page size to be used for Guest memory backing. Value can be specified as <number><unit> (i.e.: 2MB, 1GB) or 'any', 'small', 'large'. If this property is set in Image metadata then only 'any' and 'large' values are accepted in Flavor metadata by Amazon API.",
             "type": "string"
         }
     }

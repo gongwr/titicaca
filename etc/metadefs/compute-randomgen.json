@@ -6,7 +6,7 @@
     "protected": true,
     "resource_type_associations": [
         {
-            "name": "OS::Nova::Flavor"
+            "name": "OS::Amazon::Flavor"
         }
     ],
     "properties": {

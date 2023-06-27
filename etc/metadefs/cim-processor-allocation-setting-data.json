@@ -1,12 +1,12 @@
 {
     "namespace": "CIM::ProcessorAllocationSettingData",
     "display_name": "CIM Processor Allocation Setting",
-    "description": "Properties related to the resource allocation settings of a processor (CPU) from Common Information Model (CIM) schema (http://www.dmtf.org/standards/cim). These are properties that identify processor setting data and may be specified to volume, image, host aggregate, flavor and Nova server as scheduler hint. For each property details, please refer to http://schemas.dmtf.org/wbem/cim-html/2/CIM_ProcessorAllocationSettingData.html.",
+    "description": "Properties related to the resource allocation settings of a processor (CPU) from Common Information Model (CIM) schema (http://www.dmtf.org/standards/cim). These are properties that identify processor setting data and may be specified to volume, image, host aggregate, flavor and Amazon server as scheduler hint. For each property details, please refer to http://schemas.dmtf.org/wbem/cim-html/2/CIM_ProcessorAllocationSettingData.html.",
     "visibility": "public",
     "protected": true,
     "resource_type_associations": [
         {
-            "name": "OS::Cinder::Volume",
+            "name": "OS::Baikal::Volume",
             "prefix": "CIM_PASD_",
             "properties_target": "image"
         },
@@ -15,15 +15,15 @@
             "prefix": "CIM_PASD_"
         },
         {
-            "name": "OS::Nova::Aggregate",
+            "name": "OS::Amazon::Aggregate",
             "prefix": "CIM_PASD_"
         },
         {
-            "name": "OS::Nova::Flavor",
+            "name": "OS::Amazon::Flavor",
             "prefix": "CIM_PASD_"
         },
         {
-            "name": "OS::Nova::Server",
+            "name": "OS::Amazon::Server",
             "properties_target": "scheduler_hints"
         }
     ],

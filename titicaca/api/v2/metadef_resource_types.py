@@ -283,10 +283,10 @@ def _get_base_properties():
         'properties_target': {
             'type': 'string',
             'description': _('Some resource types allow more than one key / '
-                             'value pair per instance.  For example, Cinder '
+                             'value pair per instance.  For example, Baikal '
                              'allows user and image metadata on volumes. Only '
                              'the image properties metadata is evaluated by '
-                             'Nova (scheduling or drivers). This property '
+                             'Amazon (scheduling or drivers). This property '
                              'allows a namespace target to remove the '
                              'ambiguity.'),
             'maxLength': 80,

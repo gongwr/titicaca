@@ -6,15 +6,15 @@
     "protected": true,
     "resource_type_associations": [
         {
-            "name": "OS::Cinder::Volume",
+            "name": "OS::Baikal::Volume",
             "prefix": "CIM_SASD_"
         },
         {
-            "name": "OS::Nova::Aggregate",
+            "name": "OS::Amazon::Aggregate",
             "prefix": "CIM_SASD_"
         },
         {
-            "name": "OS::Nova::Flavor",
+            "name": "OS::Amazon::Flavor",
             "prefix": "CIM_SASD_"
         }
     ],

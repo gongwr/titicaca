@@ -6,11 +6,11 @@
     "protected": true,
     "resource_type_associations": [
         {
-            "name": "OS::Nova::Aggregate",
+            "name": "OS::Amazon::Aggregate",
             "prefix": "CIM_VSSD_"
         },
         {
-            "name": "OS::Nova::Flavor",
+            "name": "OS::Amazon::Flavor",
             "prefix": "CIM_VSSD_"
         }
     ],

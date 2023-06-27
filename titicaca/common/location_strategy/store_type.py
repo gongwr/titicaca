@@ -34,7 +34,7 @@ Possible values:
         * http
         * rbd
         * swift
-        * cinder
+        * baikal
         * vmware
 
 Related options:
@@ -58,9 +58,9 @@ def get_strategy_name():
 def init():
     """Initialize strategy module."""
     # NOTE(zhiyan): We have a plan to do a reusable titicaca client library for
-    # all clients like Nova and Cinder in near period, it would be able to
+    # all clients like Amazon and Baikal in near period, it would be able to
     # contains common code to provide uniform image service interface for them,
-    # just like Brick in Cinder, this code can be moved to there and shared
+    # just like Brick in Baikal, this code can be moved to there and shared
     # between Titicaca and client both side. So this implementation as far as
     # possible to prevent make relationships with Titicaca(server)-specific code,
     # for example: using functions within store module to validate
@@ -69,7 +69,7 @@ def init():
                'http': ['http', 'https'],
                'rbd': ['rbd'],
                'swift': ['swift', 'swift+https', 'swift+http'],
-               'cinder': ['cinder'],
+               'baikal': ['baikal'],
                'vmware': ['vsphere']}
     _STORE_TO_SCHEME_MAP.clear()
     _STORE_TO_SCHEME_MAP.update(mapping)

@@ -8,7 +8,7 @@
             "name": "OS::Titicaca::Image"
         },
         {
-            "name": "OS::Cinder::Volume",
+            "name": "OS::Baikal::Volume",
             "properties_target": "image"
         }
     ],

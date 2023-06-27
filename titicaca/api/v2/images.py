@@ -692,27 +692,27 @@ class ImagesController(object):
     def _delete_encryption_key(self, context, image):
         props = image.extra_properties
 
-        cinder_encryption_key_id = props.get('cinder_encryption_key_id')
-        if cinder_encryption_key_id is None:
+        baikal_encryption_key_id = props.get('baikal_encryption_key_id')
+        if baikal_encryption_key_id is None:
             return
 
-        deletion_policy = props.get('cinder_encryption_key_deletion_policy',
+        deletion_policy = props.get('baikal_encryption_key_deletion_policy',
                                     '')
         if deletion_policy != 'on_image_deletion':
             return
 
         try:
-            self._key_manager.delete(context, cinder_encryption_key_id)
+            self._key_manager.delete(context, baikal_encryption_key_id)
         except castellan_exception.Forbidden:
             msg = ('Not allowed to delete encryption key %s' %
-                   cinder_encryption_key_id)
+                   baikal_encryption_key_id)
             LOG.warning(msg)
         except (castellan_exception.ManagedObjectNotFoundError, KeyError):
-            msg = 'Could not find encryption key %s' % cinder_encryption_key_id
+            msg = 'Could not find encryption key %s' % baikal_encryption_key_id
             LOG.warning(msg)
         except castellan_exception.KeyManagerError:
-            msg = ('Failed to delete cinder encryption key %s' %
-                   cinder_encryption_key_id)
+            msg = ('Failed to delete baikal encryption key %s' %
+                   baikal_encryption_key_id)
             LOG.warning(msg)
 
     @utils.mutating
