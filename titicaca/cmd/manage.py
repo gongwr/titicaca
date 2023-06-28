@@ -17,9 +17,7 @@ import time
 
 # If ../titicaca/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
-BASE_PATH = os.path.normpath(os.path.join(os.path.abspath(__file__),
-                                   os.pardir,
-                                   os.pardir, os.pardir))
+BASE_PATH = os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir, os.pardir, os.pardir))
 if os.path.exists(os.path.join(BASE_PATH, 'titicaca', '__init__.py')):
     sys.path.insert(0, BASE_PATH)
 
@@ -40,7 +38,6 @@ from titicaca.db.sqlalchemy import api as db_api
 from titicaca.db.sqlalchemy import metadata
 from titicaca.i18n import _
 
-
 CONF = cfg.CONF
 USE_TRIGGERS = True
 
@@ -50,6 +47,7 @@ def args(*args, **kwargs):
     def _decorator(func):
         func.__dict__.setdefault('args', []).insert(0, (args, kwargs))
         return func
+
     return _decorator
 
 
@@ -85,10 +83,8 @@ class DbCommands(object):
 
         curr_heads = alembic_migrations.get_current_alembic_heads()
 
-        expand_heads = alembic_migrations.get_alembic_branch_head(
-            db_migration.EXPAND_BRANCH)
-        contract_heads = alembic_migrations.get_alembic_branch_head(
-            db_migration.CONTRACT_BRANCH)
+        expand_heads = alembic_migrations.get_alembic_branch_head(db_migration.EXPAND_BRANCH)
+        contract_heads = alembic_migrations.get_alembic_branch_head(db_migration.CONTRACT_BRANCH)
 
         if (contract_heads in curr_heads):
             print(_('Database is up to date. No upgrades needed.'))
@@ -135,8 +131,7 @@ class DbCommands(object):
         USE_TRIGGERS = False
 
         curr_heads = alembic_migrations.get_current_alembic_heads()
-        contract = alembic_migrations.get_alembic_branch_head(
-            db_migration.CONTRACT_BRANCH)
+        contract = alembic_migrations.get_alembic_branch_head(db_migration.CONTRACT_BRANCH)
 
         if contract in curr_heads:
             print(_('Database is up to date. No migrations needed.'))
@@ -166,8 +161,7 @@ class DbCommands(object):
         if version == 'heads':
             print(_("Upgraded database, current revision(s):"), revs)
         else:
-            print(_('Upgraded database to: %(v)s, current revision(s): %(r)s')
-                  % {'v': version, 'r': revs})
+            print(_('Upgraded database to: %(v)s, current revision(s): %(r)s') % {'v': version, 'r': revs})
 
     def _validate_engine(self, engine):
         """Check engine is valid or not.
@@ -187,10 +181,8 @@ class DbCommands(object):
             self._validate_engine(db_api.get_engine())
 
         curr_heads = alembic_migrations.get_current_alembic_heads()
-        expand_head = alembic_migrations.get_alembic_branch_head(
-            db_migration.EXPAND_BRANCH)
-        contract_head = alembic_migrations.get_alembic_branch_head(
-            db_migration.CONTRACT_BRANCH)
+        expand_head = alembic_migrations.get_alembic_branch_head(db_migration.EXPAND_BRANCH)
+        contract_head = alembic_migrations.get_alembic_branch_head(db_migration.CONTRACT_BRANCH)
 
         if not expand_head:
             sys.exit(_('Database expansion failed. Couldn\'t find head '
@@ -207,8 +199,7 @@ class DbCommands(object):
                 sys.exit(_('Database expansion failed. Database expansion '
                            'should have brought the database version up to '
                            '"%(e_rev)s" revision. But, current revisions are'
-                           ': %(curr_revs)s ') % {'e_rev': expand_head,
-                                                  'curr_revs': curr_heads})
+                           ': %(curr_revs)s ') % {'e_rev': expand_head, 'curr_revs': curr_heads})
         else:
             print(_('Database expansion is up to date. No expansion needed.'))
 
@@ -218,8 +209,7 @@ class DbCommands(object):
             self._validate_engine(db_api.get_engine())
 
         curr_heads = alembic_migrations.get_current_alembic_heads()
-        contract_head = alembic_migrations.get_alembic_branch_head(
-            db_migration.CONTRACT_BRANCH)
+        contract_head = alembic_migrations.get_alembic_branch_head(db_migration.CONTRACT_BRANCH)
 
         if not contract_head:
             sys.exit(_('Database contraction failed. Couldn\'t find head '
@@ -228,8 +218,7 @@ class DbCommands(object):
             print(_('Database is up to date. No migrations needed.'))
             sys.exit()
 
-        expand_head = alembic_migrations.get_alembic_branch_head(
-            db_migration.EXPAND_BRANCH)
+        expand_head = alembic_migrations.get_alembic_branch_head(db_migration.EXPAND_BRANCH)
         if expand_head not in curr_heads:
             sys.exit(_('Database contraction did not run. Database '
                        'contraction cannot be run before database expansion. '
@@ -249,8 +238,7 @@ class DbCommands(object):
             sys.exit(_('Database contraction failed. Database contraction '
                        'should have brought the database version up to '
                        '"%(e_rev)s" revision. But, current revisions are: '
-                       '%(curr_revs)s ') % {'e_rev': expand_head,
-                                            'curr_revs': curr_heads})
+                       '%(curr_revs)s ') % {'e_rev': expand_head, 'curr_revs': curr_heads})
 
     def migrate(self, online_migration=True):
         """Run the data migration phase of a database migration."""
@@ -258,15 +246,13 @@ class DbCommands(object):
             self._validate_engine(db_api.get_engine())
 
         curr_heads = alembic_migrations.get_current_alembic_heads()
-        contract_head = alembic_migrations.get_alembic_branch_head(
-            db_migration.CONTRACT_BRANCH)
+        contract_head = alembic_migrations.get_alembic_branch_head(db_migration.CONTRACT_BRANCH)
 
         if (contract_head in curr_heads):
             print(_('Database is up to date. No migrations needed.'))
             sys.exit()
 
-        expand_head = alembic_migrations.get_alembic_branch_head(
-            db_migration.EXPAND_BRANCH)
+        expand_head = alembic_migrations.get_alembic_branch_head(db_migration.EXPAND_BRANCH)
         if expand_head not in curr_heads:
             sys.exit(_('Data migration did not run. Data migration cannot be '
                        'run before database expansion. Run database '
@@ -280,23 +266,18 @@ class DbCommands(object):
 
     @args('--path', metavar='<path>', help='Path to the directory or file '
                                            'where json metadata is stored')
-    @args('--merge', action='store_true',
-          help='Merge files with data that is in the database. By default it '
-               'prefers existing data over new. This logic can be changed by '
-               'combining --merge option with one of these two options: '
-               '--prefer_new or --overwrite.')
-    @args('--prefer_new', action='store_true',
-          help='Prefer new metadata over existing. Existing metadata '
-               'might be overwritten. Needs to be combined with --merge '
-               'option.')
-    @args('--overwrite', action='store_true',
-          help='Drop and rewrite metadata. Needs to be combined with --merge '
-               'option')
-    def load_metadefs(self, path=None, merge=False,
-                      prefer_new=False, overwrite=False):
+    @args('--merge', action='store_true', help='Merge files with data that is in the database. By default it '
+                                               'prefers existing data over new. This logic can be changed by '
+                                               'combining --merge option with one of these two options: '
+                                               '--prefer_new or --overwrite.')
+    @args('--prefer_new', action='store_true', help='Prefer new metadata over existing. Existing metadata '
+                                                    'might be overwritten. Needs to be combined with --merge '
+                                                    'option.')
+    @args('--overwrite', action='store_true', help='Drop and rewrite metadata. Needs to be combined with --merge '
+                                                   'option')
+    def load_metadefs(self, path=None, merge=False, prefer_new=False, overwrite=False):
         """Load metadefinition json files to database"""
-        metadata.db_load_metadefs(db_api.get_engine(), path, merge,
-                                  prefer_new, overwrite)
+        metadata.db_load_metadefs(db_api.get_engine(), path, merge, prefer_new, overwrite)
 
     def unload_metadefs(self):
         """Unload metadefinitions from database"""
@@ -307,8 +288,7 @@ class DbCommands(object):
                                            'saved.')
     def export_metadefs(self, path=None):
         """Export metadefinitions data from database to files"""
-        metadata.db_export_metadefs(db_api.get_engine(),
-                                    path)
+        metadata.db_export_metadefs(db_api.get_engine(), path)
 
     def _purge(self, age_in_days, max_rows):
         try:
@@ -336,14 +316,11 @@ class DbCommands(object):
             sys.exit(_("Purge command failed, check titicaca-manage"
                        " logs for more details."))
 
-    @args('--age_in_days', type=int,
-          help='Purge deleted rows older than age in days')
-    @args('--max_rows', type=int,
-          help='Limit number of records to delete')
+    @args('--age_in_days', type=int, help='Purge deleted rows older than age in days')
+    @args('--max_rows', type=int, help='Limit number of records to delete')
     def purge(self, age_in_days=30, max_rows=100):
         """Purge deleted rows older than a given age from titicaca tables."""
         self._purge(age_in_days, max_rows)
-
 
 
 class DbLegacyCommands(object):
@@ -376,11 +353,8 @@ class DbLegacyCommands(object):
     def check(self):
         self.command_object.check()
 
-    def load_metadefs(self, path=None, merge=False,
-                      prefer_new=False, overwrite=False):
-        self.command_object.load_metadefs(CONF.command.path,
-                                          CONF.command.merge,
-                                          CONF.command.prefer_new,
+    def load_metadefs(self, path=None, merge=False, prefer_new=False, overwrite=False):
+        self.command_object.load_metadefs(CONF.command.path, CONF.command.merge, CONF.command.prefer_new,
                                           CONF.command.overwrite)
 
     def unload_metadefs(self):
@@ -391,7 +365,6 @@ class DbLegacyCommands(object):
 
 
 def add_legacy_command_parsers(command_object, subparsers):
-
     legacy_command_object = DbLegacyCommands(command_object)
 
     parser = subparsers.add_parser('db_version')
@@ -464,8 +437,7 @@ def add_command_parsers(subparsers):
             # the leading hyphens if no dest is supplied
             kwargs.setdefault('dest', args[0][2:])
             if kwargs['dest'].startswith('action_kwarg_'):
-                action_kwargs.append(
-                    kwargs['dest'][len('action_kwarg_'):])
+                action_kwargs.append(kwargs['dest'][len('action_kwarg_'):])
             else:
                 action_kwargs.append(kwargs['dest'])
                 kwargs['dest'] = 'action_kwarg_' + kwargs['dest']
@@ -480,15 +452,9 @@ def add_command_parsers(subparsers):
         add_legacy_command_parsers(command_object, subparsers)
 
 
-command_opt = cfg.SubCommandOpt('command',
-                                title='Commands',
-                                help='Available commands',
-                                handler=add_command_parsers)
+command_opt = cfg.SubCommandOpt('command', title='Commands', help='Available commands', handler=add_command_parsers)
 
-
-CATEGORIES = {
-    'db': DbCommands,
-}
+CATEGORIES = {'db': DbCommands, }
 
 
 def methods_of(obj):
@@ -516,10 +482,8 @@ def main():
     try:
         logging.register_options(CONF)
         CONF.set_default(name='use_stderr', default=True)
-        cfg_files = cfg.find_config_files(project='titicaca',
-                                          prog='titicaca-api')
-        cfg_files.extend(cfg.find_config_files(project='titicaca',
-                                               prog='titicaca-manage'))
+        cfg_files = cfg.find_config_files(project='titicaca', prog='titicaca-api')
+        cfg_files.extend(cfg.find_config_files(project='titicaca', prog='titicaca-manage'))
         config.parse_args(default_config_files=cfg_files)
         config.set_config_defaults()
         logging.setup(CONF, 'titicaca')
@@ -538,8 +502,7 @@ def main():
                 if isinstance(v, str):
                     v = encodeutils.safe_decode(v)
                 func_kwargs[k] = v
-            func_args = [encodeutils.safe_decode(arg)
-                         for arg in CONF.command.action_args]
+            func_args = [encodeutils.safe_decode(arg) for arg in CONF.command.action_args]
             return CONF.command.action_fn(*func_args, **func_kwargs)
     except exception.TiticacaException as e:
         sys.exit("ERROR: %s" % encodeutils.exception_to_unicode(e))

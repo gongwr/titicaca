@@ -4,17 +4,16 @@
 # All rights reserved.
 
 from alembic import op
+from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.schema import (
     Column, PrimaryKeyConstraint, ForeignKeyConstraint, UniqueConstraint)
 
-from titicaca.db.sqlalchemy.schema import (
-    Boolean, DateTime, Integer, String, Text)  # noqa
-from titicaca.db.sqlalchemy.models import JSONEncodedDict
+from titicaca.db.sqlalchemy.models.base import JSONEncodedDict
 
 
 def _add_metadef_namespaces_table():
     op.create_table('metadef_namespaces',
-                    Column('id', Integer(), nullable=False),
+                    Column('id', Integer, nullable=False),
                     Column('namespace', String(length=80), nullable=False),
                     Column('display_name', String(length=80), nullable=True),
                     Column('description', Text(), nullable=True),

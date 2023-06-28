@@ -7,20 +7,12 @@ SQLAlchemy models for titicaca metadata schema
 """
 
 from oslo_db.sqlalchemy import models
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import ForeignKey
-from sqlalchemy import Index
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import Text
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 from titicaca.common import timeutils
-from titicaca.db.sqlalchemy.models import JSONEncodedDict
+from titicaca.db.sqlalchemy.models.base import JSONEncodedDict
 
 
 class DictionaryBase(models.ModelBase):

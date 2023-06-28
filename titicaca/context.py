@@ -18,8 +18,6 @@ import copy
 from oslo_config import cfg
 from oslo_context import context
 
-from titicaca.api import policy
-
 CONF = cfg.CONF
 
 
@@ -31,7 +29,7 @@ class RequestContext(context.RequestContext):
 
     """
 
-    def __init__(self, service_catalog=None, policy_enforcer=None, **kwargs):
+    def __init__(self, service_catalog=None, **kwargs):
         # TODO(mriedem): Remove usage of user and tenant from old tests.
         if 'tenant' in kwargs:
             # Prefer project_id if passed, otherwise alias tenant as project_id
@@ -43,9 +41,6 @@ class RequestContext(context.RequestContext):
             kwargs['user_id'] = kwargs.get('user_id', user)
         super(RequestContext, self).__init__(**kwargs)
         self.service_catalog = service_catalog
-        self.policy_enforcer = policy_enforcer or policy.Enforcer()
-        if not self.is_admin:
-            self.is_admin = self.policy_enforcer.check_is_admin(self)
 
     def to_dict(self):
         d = super(RequestContext, self).to_dict()

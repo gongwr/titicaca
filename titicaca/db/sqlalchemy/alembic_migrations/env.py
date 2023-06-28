@@ -8,8 +8,7 @@ from alembic import context
 from oslo_config import cfg
 from oslo_db.sqlalchemy import enginefacade
 
-from titicaca.db.sqlalchemy import models
-from titicaca.db.sqlalchemy import models_metadef
+from titicaca.db.sqlalchemy.models import base, metadef
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -27,8 +26,8 @@ log_config.fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = models.BASE.metadata
-for table in models_metadef.BASE_DICT.metadata.sorted_tables:
+target_metadata = base.BASE.metadata
+for table in metadef.BASE_DICT.metadata.sorted_tables:
     target_metadata._add_table(table.name, table.schema, table)
 
 

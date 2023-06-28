@@ -8,28 +8,13 @@
 SQLAlchemy models for titicaca data
 """
 
-import uuid
-
 from oslo_db.sqlalchemy import models
 from oslo_serialization import jsonutils
-from sqlalchemy import BigInteger
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import Enum
+from sqlalchemy import Boolean, Column, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import ForeignKey
-from sqlalchemy import Index
-from sqlalchemy import Integer
-from sqlalchemy.orm import backref, relationship
-from sqlalchemy import sql
-from sqlalchemy import String
-from sqlalchemy import Text
 from sqlalchemy.types import TypeDecorator
-from sqlalchemy import UniqueConstraint
 
 from titicaca.common import timeutils
-
 
 BASE = declarative_base()
 
@@ -98,42 +83,3 @@ class TiticacaBase(models.ModelBase, models.TimestampMixin):
         # and causes CircularReference
         d.pop("_sa_instance_state")
         return d
-
-
-class Task(BASE, TiticacaBase):
-    """Represents a task in the datastore"""
-    __tablename__ = 'tasks'
-    __table_args__ = (Index('ix_tasks_type', 'type'),
-                      Index('ix_tasks_status', 'status'),
-                      Index('ix_tasks_owner', 'owner'),
-                      Index('ix_tasks_deleted', 'deleted'),
-                      Index('ix_tasks_updated_at', 'updated_at'))
-
-    id = Column(String(36), primary_key=True,
-                default=lambda: str(uuid.uuid4()))
-    type = Column(String(30), nullable=False)
-    status = Column(String(30), nullable=False)
-    owner = Column(String(255), nullable=False)
-    expires_at = Column(DateTime, nullable=True)
-    request_id = Column(String(64), nullable=True)
-    user_id = Column(String(64), nullable=True)
-
-
-class TaskInfo(BASE, models.ModelBase):
-    """Represents task info in the datastore"""
-    __tablename__ = 'task_info'
-
-    task_id = Column(String(36),
-                     ForeignKey('tasks.id'),
-                     primary_key=True,
-                     nullable=False)
-
-    task = relationship(Task, backref=backref('info', uselist=False))
-
-    # NOTE(nikhil): input and result are stored as text in the DB.
-    # SQLAlchemy marshals the data to/from JSON using custom type
-    # JSONEncodedDict. It uses simplejson underneath.
-    input = Column(JSONEncodedDict())
-    result = Column(JSONEncodedDict())
-    message = Column(Text)
-

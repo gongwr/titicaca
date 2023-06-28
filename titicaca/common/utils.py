@@ -11,49 +11,24 @@ System-level utilities and helper functions.
 """
 
 import errno
-
-try:
-    from eventlet import sleep
-except ImportError:
-    from time import sleep
-from eventlet.green import socket
-
 import functools
 import os
 import re
-import urllib
+from time import sleep
 
-import titicaca_store
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 from oslo_utils import netutils
-from oslo_utils import strutils
 from webob import exc
 
 from titicaca.common import exception
 from titicaca.common import timeutils
-from titicaca.common import wsgi
-from titicaca.i18n import _, _LE
+from titicaca.i18n import _
 
 CONF = cfg.CONF
 
 LOG = logging.getLogger(__name__)
-
-# Whitelist of v1 API headers of form x-image-meta-xxx
-IMAGE_META_HEADERS = ['x-image-meta-location', 'x-image-meta-size',
-                      'x-image-meta-is_public', 'x-image-meta-disk_format',
-                      'x-image-meta-container_format', 'x-image-meta-name',
-                      'x-image-meta-status', 'x-image-meta-copy_from',
-                      'x-image-meta-uri', 'x-image-meta-checksum',
-                      'x-image-meta-created_at', 'x-image-meta-updated_at',
-                      'x-image-meta-deleted_at', 'x-image-meta-min_ram',
-                      'x-image-meta-min_disk', 'x-image-meta-owner',
-                      'x-image-meta-store', 'x-image-meta-id',
-                      'x-image-meta-protected', 'x-image-meta-deleted',
-                      'x-image-meta-virtual_size']
-
-TITICACA_TEST_SOCKET_FD_STR = 'TITICACA_TEST_SOCKET_FD'
 
 
 def chunkreadable(iter, chunk_size=65536):
@@ -95,7 +70,7 @@ def cooperative_iter(iter):
             yield chunk
     except Exception as err:
         with excutils.save_and_reraise_exception():
-            msg = _LE("Error: cooperative_iter exception %s") % err
+            msg = "Error: cooperative_iter exception %s" % err
             LOG.error(msg)
 
 
@@ -106,282 +81,16 @@ def cooperative_read(fd):
 
     :param fd: a file descriptor to wrap
     """
+
     def readfn(*args):
         result = fd.read(*args)
         sleep(0)
         return result
+
     return readfn
 
 
 MAX_COOP_READER_BUFFER_SIZE = 134217728  # 128M seems like a sane buffer limit
-
-CONF.import_group('import_filtering_opts',
-                  'titicaca.async_.flows._internal_plugins')
-
-
-def validate_import_uri(uri):
-    """Validate requested uri for Image Import web-download.
-
-    :param uri: target uri to be validated
-    """
-    if not uri:
-        return False
-
-    parsed_uri = urllib.parse.urlparse(uri)
-    scheme = parsed_uri.scheme
-    host = parsed_uri.hostname
-    port = parsed_uri.port
-    wl_schemes = CONF.import_filtering_opts.allowed_schemes
-    bl_schemes = CONF.import_filtering_opts.disallowed_schemes
-    wl_hosts = CONF.import_filtering_opts.allowed_hosts
-    bl_hosts = CONF.import_filtering_opts.disallowed_hosts
-    wl_ports = CONF.import_filtering_opts.allowed_ports
-    bl_ports = CONF.import_filtering_opts.disallowed_ports
-
-    # NOTE(jokke): Checking if both allowed and disallowed are defined and
-    # logging it to inform only allowed will be obeyed.
-    if wl_schemes and bl_schemes:
-        bl_schemes = []
-        LOG.debug("Both allowed and disallowed schemes has been configured. "
-                  "Will only process allowed list.")
-    if wl_hosts and bl_hosts:
-        bl_hosts = []
-        LOG.debug("Both allowed and disallowed hosts has been configured. "
-                  "Will only process allowed list.")
-    if wl_ports and bl_ports:
-        bl_ports = []
-        LOG.debug("Both allowed and disallowed ports has been configured. "
-                  "Will only process allowed list.")
-
-    if not scheme or ((wl_schemes and scheme not in wl_schemes) or
-                      parsed_uri.scheme in bl_schemes):
-        return False
-    if not host or ((wl_hosts and host not in wl_hosts) or
-                    host in bl_hosts):
-        return False
-    if port and ((wl_ports and port not in wl_ports) or
-                 port in bl_ports):
-        return False
-
-    return True
-
-
-class CooperativeReader(object):
-    """
-    An eventlet thread friendly class for reading in image data.
-
-    When accessing data either through the iterator or the read method
-    we perform a sleep to allow a co-operative yield. When there is more than
-    one image being uploaded/downloaded this prevents eventlet thread
-    starvation, ie allows all threads to be scheduled periodically rather than
-    having the same thread be continuously active.
-    """
-    def __init__(self, fd):
-        """
-        :param fd: Underlying image file object
-        """
-        self.fd = fd
-        self.iterator = None
-        # NOTE(markwash): if the underlying supports read(), overwrite the
-        # default iterator-based implementation with cooperative_read which
-        # is more straightforward
-        if hasattr(fd, 'read'):
-            self.read = cooperative_read(fd)
-        else:
-            self.iterator = None
-            self.buffer = b''
-            self.position = 0
-
-    def read(self, length=None):
-        """Return the requested amount of bytes, fetching the next chunk of
-        the underlying iterator when needed.
-
-        This is replaced with cooperative_read in __init__ if the underlying
-        fd already supports read().
-        """
-        if length is None:
-            if len(self.buffer) - self.position > 0:
-                # if no length specified but some data exists in buffer,
-                # return that data and clear the buffer
-                result = self.buffer[self.position:]
-                self.buffer = b''
-                self.position = 0
-                return bytes(result)
-            else:
-                # otherwise read the next chunk from the underlying iterator
-                # and return it as a whole. Reset the buffer, as subsequent
-                # calls may specify the length
-                try:
-                    if self.iterator is None:
-                        self.iterator = self.__iter__()
-                    return next(self.iterator)
-                except StopIteration:
-                    return b''
-                finally:
-                    self.buffer = b''
-                    self.position = 0
-        else:
-            result = bytearray()
-            while len(result) < length:
-                if self.position < len(self.buffer):
-                    to_read = length - len(result)
-                    chunk = self.buffer[self.position:self.position + to_read]
-                    result.extend(chunk)
-
-                    # This check is here to prevent potential OOM issues if
-                    # this code is called with unreasonably high values of read
-                    # size. Currently it is only called from the HTTP clients
-                    # of Titicaca backend stores, which use httplib for data
-                    # streaming, which has readsize hardcoded to 8K, so this
-                    # check should never fire. Regardless it still worths to
-                    # make the check, as the code may be reused somewhere else.
-                    if len(result) >= MAX_COOP_READER_BUFFER_SIZE:
-                        raise exception.LimitExceeded()
-                    self.position += len(chunk)
-                else:
-                    try:
-                        if self.iterator is None:
-                            self.iterator = self.__iter__()
-                        self.buffer = next(self.iterator)
-                        self.position = 0
-                    except StopIteration:
-                        self.buffer = b''
-                        self.position = 0
-                        return bytes(result)
-            return bytes(result)
-
-    def __iter__(self):
-        return cooperative_iter(self.fd.__iter__())
-
-
-class LimitingReader(object):
-    """
-    Reader designed to fail when reading image data past the configured
-    allowable amount.
-    """
-    def __init__(self, data, limit,
-                 exception_class=exception.ImageSizeLimitExceeded):
-        """
-        :param data: Underlying image data object
-        :param limit: maximum number of bytes the reader should allow
-        :param exception_class: Type of exception to be raised
-        """
-        self.data = data
-        self.limit = limit
-        self.bytes_read = 0
-        self.exception_class = exception_class
-
-    def __iter__(self):
-        for chunk in self.data:
-            self.bytes_read += len(chunk)
-            if self.bytes_read > self.limit:
-                raise self.exception_class()
-            else:
-                yield chunk
-
-    def read(self, i):
-        result = self.data.read(i)
-        self.bytes_read += len(result)
-        if self.bytes_read > self.limit:
-            raise self.exception_class()
-        return result
-
-
-def image_meta_to_http_headers(image_meta):
-    """
-    Returns a set of image metadata into a dict
-    of HTTP headers that can be fed to either a Webob
-    Request object or an httplib.HTTP(S)Connection object
-
-    :param image_meta: Mapping of image metadata
-    """
-    headers = {}
-    for k, v in image_meta.items():
-        if v is not None:
-            if k == 'properties':
-                for pk, pv in v.items():
-                    if pv is not None:
-                        headers["x-image-meta-property-%s"
-                                % pk.lower()] = str(pv)
-            else:
-                headers["x-image-meta-%s" % k.lower()] = str(v)
-    return headers
-
-
-def get_image_meta_from_headers(response):
-    """
-    Processes HTTP headers from a supplied response that
-    match the x-image-meta and x-image-meta-property and
-    returns a mapping of image metadata and properties
-
-    :param response: Response to process
-    """
-    result = {}
-    properties = {}
-
-    if hasattr(response, 'getheaders'):  # httplib.HTTPResponse
-        headers = response.getheaders()
-    else:  # webob.Response
-        headers = response.headers.items()
-
-    for key, value in headers:
-        key = str(key.lower())
-        if key.startswith('x-image-meta-property-'):
-            field_name = key[len('x-image-meta-property-'):].replace('-', '_')
-            properties[field_name] = value or None
-        elif key.startswith('x-image-meta-'):
-            field_name = key[len('x-image-meta-'):].replace('-', '_')
-            if 'x-image-meta-' + field_name not in IMAGE_META_HEADERS:
-                msg = _("Bad header: %(header_name)s") % {'header_name': key}
-                raise exc.HTTPBadRequest(msg, content_type="text/plain")
-            result[field_name] = value or None
-    result['properties'] = properties
-
-    for key, nullable in [('size', False), ('min_disk', False),
-                          ('min_ram', False), ('virtual_size', True)]:
-        if key in result:
-            try:
-                result[key] = int(result[key])
-            except ValueError:
-                if nullable and result[key] == str(None):
-                    result[key] = None
-                else:
-                    extra = (_("Cannot convert image %(key)s '%(value)s' "
-                               "to an integer.")
-                             % {'key': key, 'value': result[key]})
-                    raise exception.InvalidParameterValue(value=result[key],
-                                                          param=key,
-                                                          extra_msg=extra)
-            if result[key] is not None and result[key] < 0:
-                extra = _('Cannot be a negative value.')
-                raise exception.InvalidParameterValue(value=result[key],
-                                                      param=key,
-                                                      extra_msg=extra)
-
-    for key in ('is_public', 'deleted', 'protected'):
-        if key in result:
-            result[key] = strutils.bool_from_string(result[key])
-    return result
-
-
-def create_mashup_dict(image_meta):
-    """
-    Returns a dictionary-like mashup of the image core properties
-    and the image custom properties from given image metadata.
-
-    :param image_meta: metadata of image with core and custom properties
-    """
-
-    d = {}
-    for key, value in image_meta.items():
-        if isinstance(value, dict):
-            for subkey, subvalue in create_mashup_dict(value).items():
-                if subkey not in image_meta:
-                    d[subkey] = subvalue
-        else:
-            d[key] = value
-
-    return d
 
 
 def safe_mkdirs(path):
@@ -394,6 +103,7 @@ def safe_mkdirs(path):
 
 def mutating(func):
     """Decorator to enforce read-only logic"""
+
     @functools.wraps(func)
     def wrapped(self, req, *args, **kwargs):
         if req.context.read_only:
@@ -402,14 +112,15 @@ def mutating(func):
             raise exc.HTTPForbidden(msg, request=req,
                                     content_type="text/plain")
         return func(self, req, *args, **kwargs)
+
     return wrapped
 
 
 def setup_remote_pydev_debug(host, port):
-    error_msg = _LE('Error setting up the debug environment. Verify that the'
-                    ' option pydev_worker_debug_host is pointing to a valid '
-                    'hostname or IP on which a pydev server is listening on'
-                    ' the port indicated by pydev_worker_debug_port.')
+    error_msg = ('Error setting up the debug environment. Verify that the'
+                 ' option pydev_worker_debug_host is pointing to a valid '
+                 'hostname or IP on which a pydev server is listening on'
+                 ' the port indicated by pydev_worker_debug_port.')
 
     try:
         try:
@@ -425,18 +136,6 @@ def setup_remote_pydev_debug(host, port):
     except Exception:
         with excutils.save_and_reraise_exception():
             LOG.exception(error_msg)
-
-
-def get_test_suite_socket():
-    global TITICACA_TEST_SOCKET_FD_STR
-    if TITICACA_TEST_SOCKET_FD_STR in os.environ:
-        fd = int(os.environ[TITICACA_TEST_SOCKET_FD_STR])
-        sock = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
-        sock.listen(CONF.backlog)
-        del os.environ[TITICACA_TEST_SOCKET_FD_STR]
-        os.close(fd)
-        return sock
-    return None
 
 
 def is_valid_hostname(hostname):
@@ -500,12 +199,13 @@ def no_4byte_params(f):
     Checks that no 4 byte unicode characters are allowed
     in dicts' keys/values and string's parameters
     """
+
     def wrapper(*args, **kwargs):
 
         def _is_match(some_str):
             return (
-                isinstance(some_str, str) and
-                REGEX_4BYTE_UNICODE.findall(some_str) != []
+                    isinstance(some_str, str) and
+                    REGEX_4BYTE_UNICODE.findall(some_str) != []
             )
 
         def _check_dict(data_dict):
@@ -533,6 +233,7 @@ def no_4byte_params(f):
         # registry calls
         _check_dict(kwargs)
         return f(*args, **kwargs)
+
     return wrapper
 
 
@@ -655,50 +356,3 @@ def evaluate_filter_op(value, operator, threshold):
 
     msg = _("Unable to filter on a unknown operator.")
     raise exception.InvalidFilterOperatorValue(msg)
-
-
-def _get_available_stores():
-    available_stores = CONF.enabled_backends
-    stores = []
-    # Remove reserved stores from the available stores list
-    for store in available_stores:
-        # NOTE (abhishekk): http store is readonly and should be
-        # excluded from the list.
-        if available_stores[store] == 'http':
-            continue
-        if store not in wsgi.RESERVED_STORES:
-            stores.append(store)
-
-    return stores
-
-
-def get_stores_from_request(req, body):
-    """Processes a supplied request and extract stores from it
-
-    :param req: request to process
-    :param body: request body
-
-    :raises titicaca_store.UnknownScheme:  if a store is not valid
-    :return: a list of stores
-    """
-    if body.get('all_stores', False):
-        if 'stores' in body or 'x-image-meta-store' in req.headers:
-            msg = _("All_stores parameter can't be used with "
-                    "x-image-meta-store header or stores parameter")
-            raise exc.HTTPBadRequest(explanation=msg)
-        stores = _get_available_stores()
-    else:
-        try:
-            stores = body['stores']
-        except KeyError:
-            stores = [req.headers.get('x-image-meta-store',
-                                      CONF.titicaca_store.default_backend)]
-        else:
-            if 'x-image-meta-store' in req.headers:
-                msg = _("Stores parameter and x-image-meta-store header can't "
-                        "be both specified")
-                raise exc.HTTPBadRequest(explanation=msg)
-    # Validate each store
-    for store in stores:
-        titicaca_store.get_store_from_store_identifier(store)
-    return stores

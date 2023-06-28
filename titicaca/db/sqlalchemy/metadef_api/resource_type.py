@@ -10,7 +10,7 @@ import sqlalchemy.orm as sa_orm
 
 from titicaca.common import exception as exc
 import titicaca.db.sqlalchemy.metadef_api.utils as metadef_utils
-from titicaca.db.sqlalchemy import models_metadef as models
+from titicaca.db.sqlalchemy.models import metadef as models
 
 LOG = logging.getLogger(__name__)
 

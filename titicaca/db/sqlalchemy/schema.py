@@ -13,33 +13,3 @@ import sqlalchemy.types
 
 LOG = logging.getLogger(__name__)
 
-
-def String(length):
-    return sqlalchemy.types.String(length=length)
-
-def Text():
-    return sqlalchemy.types.Text(length=None)
-
-
-def Boolean():
-    return sqlalchemy.types.Boolean(create_constraint=True, name=None)
-
-
-def DateTime():
-    return sqlalchemy.types.DateTime(timezone=False)
-
-
-def Integer():
-    return sqlalchemy.types.Integer()
-
-
-def BigInteger():
-    return sqlalchemy.types.BigInteger()
-
-
-def PickleType():
-    return sqlalchemy.types.PickleType()
-
-
-def Numeric():
-    return sqlalchemy.types.Numeric()

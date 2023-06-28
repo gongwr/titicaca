@@ -12,8 +12,7 @@ import sqlalchemy.orm as sa_orm
 from titicaca.common import exception as exc
 from titicaca.db.sqlalchemy.metadef_api import namespace as namespace_api
 import titicaca.db.sqlalchemy.metadef_api.utils as metadef_utils
-from titicaca.db.sqlalchemy import models_metadef as models
-from titicaca.i18n import _LW
+from titicaca.db.sqlalchemy.models import metadef as models
 
 LOG = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ def _get(context, id, session):
         query = (session.query(models.MetadefTag).filter_by(id=id))
         metadef_tag = query.one()
     except sa_orm.exc.NoResultFound:
-        msg = (_LW("Metadata tag not found for id %s") % id)
+        msg = ("Metadata tag not found for id %s" % id)
         LOG.warning(msg)
         raise exc.MetadefTagNotFound(message=msg)
     return metadef_tag

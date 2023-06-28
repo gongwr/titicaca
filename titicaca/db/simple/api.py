@@ -6,7 +6,6 @@
 
 import copy
 import functools
-import uuid
 
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -20,16 +19,12 @@ CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 DATA = {
-    'images': {},
-    'members': [],
     'metadef_namespace_resource_types': [],
     'metadef_namespaces': [],
     'metadef_objects': [],
     'metadef_properties': [],
     'metadef_resource_types': [],
     'metadef_tags': [],
-    'tags': {},
-    'locations': [],
     'tasks': {},
     'task_info': {},
 }
@@ -40,24 +35,23 @@ INDEX = 0
 def log_call(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        LOG.info(_LI('Calling %(funcname)s: args=%(args)s, '
-                     'kwargs=%(kwargs)s'),
+        LOG.info('Calling %(funcname)s: args=%(args)s, kwargs=%(kwargs)s',
                  {"funcname": func.__name__,
                   "args": args,
                   "kwargs": kwargs})
         output = func(*args, **kwargs)
-        LOG.info(_LI('Returning %(funcname)s: %(output)s'),
+        LOG.info('Returning %(funcname)s: %(output)s',
                  {"funcname": func.__name__,
                   "output": output})
         return output
+
     return wrapped
 
 
 def configure():
     if CONF.workers not in [0, 1]:
-        msg = _('CONF.workers should be set to 0 or 1 when using the '
-                'db.simple.api backend. Fore more info, see '
-                'https://bugs.launchpad.net/titicaca/+bug/1619508')
+        msg = _('CONF.workers should be set to 0 or 1 when using the db.simple.api backend.'
+                'Fore more info, see https://bugs.launchpad.net/titicaca/+bug/1619508')
         LOG.critical(msg)
         raise SystemExit(msg)
 
@@ -65,16 +59,12 @@ def configure():
 def reset():
     global DATA
     DATA = {
-        'images': {},
-        'members': [],
         'metadef_namespace_resource_types': [],
         'metadef_namespaces': [],
         'metadef_objects': [],
         'metadef_properties': [],
         'metadef_resource_types': [],
         'metadef_tags': [],
-        'tags': {},
-        'locations': [],
         'tasks': {},
         'task_info': {},
     }

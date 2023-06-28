@@ -4,12 +4,11 @@
 # All rights reserved.
 
 from alembic import op
+from sqlalchemy import String, DateTime, Boolean, Text
 from sqlalchemy.schema import (
     Column, PrimaryKeyConstraint, ForeignKeyConstraint)
 
-from titicaca.db.sqlalchemy.schema import (
-    Boolean, DateTime, String, Text)  # noqa
-from titicaca.db.sqlalchemy.models import JSONEncodedDict
+from titicaca.db.sqlalchemy.models.base import JSONEncodedDict
 
 
 def _add_tasks_table():
@@ -17,7 +16,7 @@ def _add_tasks_table():
                     Column('id', String(length=36), nullable=False),
                     Column('type', String(length=30), nullable=False),
                     Column('status', String(length=30), nullable=False),
-                    Column('owner', String(length=255), nullable=False),
+                    Column('owner', String(length=256), nullable=False),
                     Column('expires_at', DateTime(), nullable=True),
                     Column('created_at', DateTime(), nullable=False),
                     Column('updated_at', DateTime(), nullable=True),

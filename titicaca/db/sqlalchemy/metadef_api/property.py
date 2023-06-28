@@ -11,7 +11,7 @@ import sqlalchemy.orm as sa_orm
 from titicaca.common import exception as exc
 from titicaca.db.sqlalchemy.metadef_api import namespace as namespace_api
 from titicaca.db.sqlalchemy.metadef_api import utils as metadef_utils
-from titicaca.db.sqlalchemy import models_metadef as models
+from titicaca.db.sqlalchemy.models import metadef as models
 from titicaca.i18n import _
 
 LOG = logging.getLogger(__name__)

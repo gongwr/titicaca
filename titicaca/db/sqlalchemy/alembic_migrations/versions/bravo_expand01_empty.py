@@ -5,9 +5,7 @@
 from alembic import op
 from sqlalchemy import Column, Enum, MetaData
 
-from titicaca.cmd import manage
 from titicaca.db import migration
-from titicaca.db.sqlalchemy.schema import Boolean
 
 # revision identifiers, used by Alembic.
 revision = 'bravo_expand01'
