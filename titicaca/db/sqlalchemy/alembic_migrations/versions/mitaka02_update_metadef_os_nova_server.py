@@ -24,9 +24,9 @@ depends_on = None
 
 def upgrade():
     migrate_engine = op.get_bind()
-    meta = MetaData(bind=migrate_engine)
+    meta = MetaData()
 
-    resource_types_table = Table('metadef_resource_types', meta, autoload=True)
+    resource_types_table = Table('metadef_resource_types', meta, autoload_with=migrate_engine)
 
     resource_types_table.update(values={'name': 'OS::Amazon::Server'}).where(
         resource_types_table.c.name == 'OS::Amazon::Instance').execute()

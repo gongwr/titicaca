@@ -27,9 +27,9 @@ UPDATED_AT_INDEX = 'updated_at_image_idx'
 
 def upgrade():
     migrate_engine = op.get_bind()
-    meta = MetaData(bind=migrate_engine)
+    meta = MetaData()
 
-    images = Table('images', meta, autoload=True)
+    images = Table('images', meta, autoload_with=migrate_engine)
 
     created_index = Index(CREATED_AT_INDEX, images.c.created_at)
     created_index.create(migrate_engine)
