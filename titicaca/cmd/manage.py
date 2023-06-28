@@ -11,21 +11,17 @@
 Titicaca Management Utility
 """
 
-# FIXME(sirp): When we have titicaca-admin we can consider merging this into it
-# Perhaps for consistency with Amazon, we would then rename titicaca-admin ->
-# titicaca-manage (or the other way around)
-
 import os
 import sys
 import time
 
 # If ../titicaca/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
-possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
+BASE_PATH = os.path.normpath(os.path.join(os.path.abspath(__file__),
                                    os.pardir,
-                                   os.pardir))
-if os.path.exists(os.path.join(possible_topdir, 'titicaca', '__init__.py')):
-    sys.path.insert(0, possible_topdir)
+                                   os.pardir, os.pardir))
+if os.path.exists(os.path.join(BASE_PATH, 'titicaca', '__init__.py')):
+    sys.path.insert(0, BASE_PATH)
 
 from alembic import command as alembic_command
 
@@ -36,7 +32,6 @@ from oslo_utils import encodeutils
 
 from titicaca.common import config
 from titicaca.common import exception
-from titicaca import context
 from titicaca.db import migration as db_migration
 from titicaca.db.sqlalchemy import alembic_migrations
 from titicaca.db.sqlalchemy.alembic_migrations import data_migrations

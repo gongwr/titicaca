@@ -99,7 +99,7 @@
 
 # Format string to use for log messages with context. Used by
 # oslo_log.formatters.ContextFormatter (string value)
-#logging_context_format_string = %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s %(user_identity)s] %(instance)s%(message)s
+#logging_context_format_string = %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(global_request_id)s %(request_id)s %(user_identity)s] %(instance)s%(message)s
 
 # Format string to use for log messages when context is undefined. Used by
 # oslo_log.formatters.ContextFormatter (string value)
@@ -116,7 +116,7 @@
 # Defines the format string for %(user_identity)s that is used in
 # logging_context_format_string. Used by oslo_log.formatters.ContextFormatter
 # (string value)
-#logging_user_identity_format = %(user)s %(tenant)s %(domain)s %(user_domain)s %(project_domain)s
+#logging_user_identity_format = %(user)s %(project)s %(domain)s %(system_scope)s %(user_domain)s %(project_domain)s
 
 # List of package logging levels in logger=LEVEL pairs. This option is ignored
 # if log_config_append is set. (list value)
@@ -166,7 +166,7 @@
 # Deprecated group/name - [DEFAULT]/sql_connection
 # Deprecated group/name - [DATABASE]/sql_connection
 # Deprecated group/name - [sql]/connection
-connection =  mysql+pymysql://titicaca:TITICACA_DBPASS@localhost:3306/titicaca?charset=utf8
+connection = <None>
 
 # The SQLAlchemy connection string to use to connect to the slave database.
 # (string value)
@@ -178,8 +178,17 @@ connection =  mysql+pymysql://titicaca:TITICACA_DBPASS@localhost:3306/titicaca?c
 # (string value)
 #mysql_sql_mode = TRADITIONAL
 
-# If True, transparently enables support for handling MySQL Cluster (NDB).
-# (boolean value)
+# For Galera only, configure wsrep_sync_wait causality checks on new
+# connections.  Default is None, meaning don't configure any setting. (integer
+# value)
+#mysql_wsrep_sync_wait = <None>
+
+# DEPRECATED: If True, transparently enables support for handling MySQL Cluster
+# (NDB). (boolean value)
+# This option is deprecated for removal since 12.1.0.
+# Its value may be silently ignored in the future.
+# Reason: Support for the MySQL NDB Cluster storage engine has been deprecated
+# and will be removed in a future release.
 #mysql_enable_ndb = false
 
 # Connections which have been present in the connection pool longer than this

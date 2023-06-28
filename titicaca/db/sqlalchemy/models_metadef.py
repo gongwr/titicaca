@@ -41,7 +41,7 @@ class TiticacaMetadefBase(models.TimestampMixin):
 
     __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8'}
     __table_initialized__ = False
-    __protected_attributes__ = set(["created_at", "updated_at"])
+    __protected_attributes__ = {"created_at", "updated_at"}
 
     created_at = Column(DateTime, default=lambda: timeutils.utcnow(),
                         nullable=False)
@@ -154,17 +154,17 @@ class MetadefTag(BASE_DICT, TiticacaMetadefBase):
 
 def register_models(engine):
     """Create database tables for all models with the given engine."""
-    models = (MetadefNamespace, MetadefObject, MetadefProperty,
-              MetadefTag,
-              MetadefResourceType, MetadefNamespaceResourceType)
-    for model in models:
+    metadef_models = (MetadefNamespace, MetadefObject, MetadefProperty,
+                      MetadefTag,
+                      MetadefResourceType, MetadefNamespaceResourceType)
+    for model in metadef_models:
         model.metadata.create_all(engine)
 
 
 def unregister_models(engine):
     """Drop database tables for all models with the given engine."""
-    models = (MetadefObject, MetadefProperty, MetadefNamespaceResourceType,
-              MetadefTag,
-              MetadefNamespace, MetadefResourceType)
-    for model in models:
+    metadef_models = (MetadefObject, MetadefProperty, MetadefNamespaceResourceType,
+                      MetadefTag,
+                      MetadefNamespace, MetadefResourceType)
+    for model in metadef_models:
         model.metadata.drop_all(engine)
