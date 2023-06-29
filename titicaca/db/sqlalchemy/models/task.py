@@ -1,3 +1,6 @@
+# Copyright (c) 2023 WenRui Gong
+# All rights reserved.
+
 import uuid
 
 from oslo_db.sqlalchemy import models
@@ -6,9 +9,6 @@ from sqlalchemy.orm import backref, relationship
 
 from titicaca.db.sqlalchemy.models.base import BASE, TiticacaBase, JSONEncodedDict
 
-
-# Copyright (c) 2023 WenRui Gong
-# All rights reserved.
 
 class Task(BASE, TiticacaBase):
     """Represents a task in the datastore"""

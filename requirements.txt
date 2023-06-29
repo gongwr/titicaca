@@ -16,4 +16,6 @@ WebOb~=1.8.7
 iso8601~=2.0.0
 oslo.i18n~=6.0.0
 oslo.context~=5.1.1
-pydevd~=2.9.6
+pytz~=2023.3
+passlib~=1.7.4
+jsonschema~=4.17.3

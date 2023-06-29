@@ -6,16 +6,87 @@
 
 """Titicaca exception subclasses"""
 
+import http.client
 import urllib.parse as urlparse
 
+from oslo_config import cfg
+from oslo_log import log
+from oslo_utils import encodeutils
+
 from titicaca.i18n import _
+
+LOG = log.getLogger(__name__)
+CONF = cfg.CONF
+
+TITICACA_API_EXCEPTIONS = set([])
 
 _FATAL_EXCEPTION_FORMAT_ERRORS = False
 
 
-class RedirectException(Exception):
-    def __init__(self, url):
-        self.url = urlparse.urlparse(url)
+def _format_with_unicode_kwargs(msg_format, kwargs):
+    try:
+        return msg_format % kwargs
+    except UnicodeDecodeError:
+        try:
+            kwargs = {k: encodeutils.safe_decode(v)
+                      for k, v in kwargs.items()}
+        except UnicodeDecodeError:
+            # NOTE(jamielennox): This is the complete failure case
+            # at least by showing the template we have some idea
+            # of where the error is coming from
+            return msg_format
+
+        return msg_format % kwargs
+
+
+class _TiticacaExceptionMeta(type):
+    """Automatically Register the Exceptions in 'TITICACA_API_EXCEPTIONS' list.
+
+    The `TITICACA_API_EXCEPTIONS` list is utilized by flask to register a
+    handler to emit sane details when the exception occurs.
+    """
+
+    def __new__(mcs, name, bases, class_dict):
+        """Create a new instance and register with TITICACA_API_EXCEPTIONS."""
+        cls = type.__new__(mcs, name, bases, class_dict)
+        TITICACA_API_EXCEPTIONS.add(cls)
+        return cls
+
+
+class Error(Exception, metaclass=_TiticacaExceptionMeta):
+    """Base error class.
+
+    Child classes should define an HTTP status code, title, and a
+    message_format.
+
+    """
+
+    code = None
+    title = None
+    message_format = None
+
+    def __init__(self, message=None, **kwargs):
+        try:
+            message = self._build_message(message, **kwargs)
+        except KeyError:
+            # if you see this warning in your logs, please raise a bug report
+            if _FATAL_EXCEPTION_FORMAT_ERRORS:
+                raise
+            else:
+                LOG.warning('missing exception kwargs (programmer error)')
+                message = self.message_format
+
+        super(Error, self).__init__(message)
+
+    def _build_message(self, message, **kwargs):
+        """Build and returns an exception message.
+
+        :raises KeyError: given insufficient kwargs
+
+        """
+        if message:
+            return message
+        return _format_with_unicode_kwargs(self.message_format, kwargs)
 
 
 class TiticacaException(Exception):
@@ -42,6 +113,11 @@ class TiticacaException(Exception):
                 pass
         self.msg = message
         super(TiticacaException, self).__init__(message)
+
+
+class RedirectException(Exception):
+    def __init__(self, url):
+        self.url = urlparse.urlparse(url)
 
 
 class MissingCredentialError(TiticacaException):
@@ -249,7 +325,7 @@ class InvalidRedirect(TiticacaException):
 
 
 class NoServiceEndpoint(TiticacaException):
-    message = _("Response from Keystone does not contain a Titicaca endpoint.")
+    message = _("Response from Titicaca does not contain a Titicaca endpoint.")
 
 
 class RegionAmbiguity(TiticacaException):
@@ -443,3 +519,42 @@ class InvalidDataMigrationScript(TiticacaException):
     message = _("Invalid data migration script '%(script)s'. A valid data "
                 "migration script must implement functions 'has_migrations' "
                 "and 'migrate'.")
+
+
+class ValidationError(Error):
+    message_format = _("Expecting to find %(attribute)s in %(target)s."
+                       " The server could not comply with the request"
+                       " since it is either malformed or otherwise"
+                       " incorrect. The client is assumed to be in error.")
+    code = int(http.client.BAD_REQUEST)
+    title = http.client.responses[http.client.BAD_REQUEST]
+
+
+class ForbiddenNotSecurity(Error):
+    """When you want to return a 403 Forbidden response but not security.
+    Use this for errors where the message is always safe to present to the user
+    and won't give away extra information.
+    """
+    code = int(http.client.FORBIDDEN)
+    title = http.client.responses[http.client.FORBIDDEN]
+
+
+class PasswordVerificationError(ForbiddenNotSecurity):
+    message_format = _("The password length must be less than or equal "
+                       "to %(size)i. The server could not comply with the "
+                       "request because the password is invalid.")
+
+
+class PasswordValidationError(ValidationError):
+    message_format = _("Password validation error: %(detail)s.")
+
+
+class PasswordRequirementsValidationError(PasswordValidationError):
+    message_format = _("The password does not match the requirements:"
+                       " %(detail)s.")
+
+
+class SchemaValidationError(ValidationError):
+    # NOTE(lbragstad): For whole OpenStack message consistency, this error
+    # message has been written in a format consistent with WSME.
+    message_format = _("%(detail)s")

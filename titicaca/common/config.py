@@ -368,11 +368,11 @@ Related options:
 """)),
     cfg.BoolOpt('use_keystone_limits', default=False,
                 help=_("""
-Utilize per-tenant resource limits registered in Keystone.
+Utilize per-tenant resource limits registered in Titicaca.
 
-Enabling this feature will cause Titicaca to retrieve limits set in keystone
+Enabling this feature will cause Titicaca to retrieve limits set in titicaca
 for resource consumption and enforce them against API users. Before turning
-this on, the limits need to be registered in Keystone or all quotas will be
+this on, the limits need to be registered in Titicaca or all quotas will be
 considered to be zero, and thus reject all new resource requests.
 
 These per-tenant resource limits are independent from the static
@@ -514,7 +514,7 @@ behind the `reader` role.
 
 Operators should take an opportunity to understand titicaca's new image policies,
 audit assignments in their deployment, and update permissions using the default
-roles in keystone (e.g., `admin`, `member`, and `reader`).
+roles in titicaca (e.g., `admin`, `member`, and `reader`).
 
 Related options:
     * [oslo_policy]/enforce_new_defaults

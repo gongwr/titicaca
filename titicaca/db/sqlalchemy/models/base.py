@@ -8,31 +8,20 @@
 SQLAlchemy models for titicaca data
 """
 
+import datetime
+
+import pytz
 from oslo_db.sqlalchemy import models
 from oslo_serialization import jsonutils
-from sqlalchemy import Boolean, Column, DateTime, Text
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Text
+from sqlalchemy import types as sql_types
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import TypeDecorator
 
 from titicaca.common import timeutils
+from titicaca.i18n import _
 
 BASE = declarative_base()
-
-
-class JSONEncodedDict(TypeDecorator):
-    """Represents an immutable structure as a json-encoded string"""
-
-    impl = Text
-
-    def process_bind_param(self, value, dialect):
-        if value is not None:
-            value = jsonutils.dumps(value)
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value is not None:
-            value = jsonutils.loads(value)
-        return value
 
 
 class TiticacaBase(models.ModelBase, models.TimestampMixin):
@@ -83,3 +72,144 @@ class TiticacaBase(models.ModelBase, models.TimestampMixin):
         # and causes CircularReference
         d.pop("_sa_instance_state")
         return d
+
+
+class DateTimeInt(sql_types.TypeDecorator):
+    """A column that automatically converts a datetime object to an Int.
+
+    Titicaca relies on accurate (sub-second) datetime objects. In some cases
+    the RDBMS drop sub-second accuracy (some versions of MySQL). This field
+    automatically converts the value to an INT when storing the data and
+    back to a datetime object when it is loaded from the database.
+
+    NOTE: Any datetime object that has timezone data will be converted to UTC.
+          Any datetime object that has no timezone data will be assumed to be
+          UTC and loaded from the DB as such.
+    """
+
+    impl = BigInteger
+    epoch = datetime.datetime.fromtimestamp(0, tz=pytz.UTC)
+    # NOTE(ralonsoh): set to True as any other TypeDecorator in SQLAlchemy
+    # https://docs.sqlalchemy.org/en/14/core/custom_types.html# \
+    #   sqlalchemy.types.TypeDecorator.cache_ok
+    cache_ok = True
+    """This type is safe to cache."""
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        else:
+            if not isinstance(value, datetime.datetime):
+                raise ValueError(_('Programming Error: value to be stored '
+                                   'must be a datetime object.'))
+            value = timeutils.normalize_time(value)
+            value = value.replace(tzinfo=pytz.UTC)
+            # NOTE(morgan): We are casting this to an int, and ensuring we
+            # preserve microsecond data by moving the decimal. This is easier
+            # than being concerned with the differences in Numeric types in
+            # different SQL backends.
+            return int((value - self.epoch).total_seconds() * 1000000)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        else:
+            # Convert from INT to appropriate micro-second float (microseconds
+            # after the decimal) from what was stored to the DB
+            value = float(value) / 1000000
+            # NOTE(morgan): Explictly use timezone "pytz.UTC" to ensure we are
+            # not adjusting the actual datetime object from what we stored.
+            dt_obj = datetime.datetime.fromtimestamp(value, tz=pytz.UTC)
+            # Return non-tz aware datetime object (as titicaca expects)
+            return timeutils.normalize_time(dt_obj)
+
+
+class JSONEncodedDict(TypeDecorator):
+    """Represents an immutable structure as a json-encoded string"""
+
+    impl = Text
+
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = jsonutils.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = jsonutils.loads(value)
+        return value
+
+
+
+class ModelDictMixin(models.ModelBase):
+
+    @classmethod
+    def from_dict(cls, d):
+        """Return a model instance from a dictionary."""
+        return cls(**d)
+
+    def to_dict(self):
+        """Return the model's attributes as a dictionary."""
+        names = (column.name for column in self.__table__.columns)
+        return {name: getattr(self, name) for name in names}
+
+
+class ModelDictMixinWithExtras(models.ModelBase):
+    """Mixin making model behave with dict-like interfaces includes extras.
+
+    NOTE: DO NOT USE THIS FOR FUTURE SQL MODELS. "Extra" column is a legacy
+          concept that should not be carried forward with new SQL models
+          as the concept of "arbitrary" properties is not in line with
+          the design philosophy of Titicaca.
+    """
+
+    attributes = []
+    _msg = ('Programming Error: Model does not have an "extra" column. '
+            'Unless the model already has an "extra" column and has '
+            'existed in a previous released version of titicaca with '
+            'the extra column included, the model should use '
+            '"ModelDictMixin" instead.')
+
+    @classmethod
+    def from_dict(cls, d):
+        new_d = d.copy()
+
+        if not hasattr(cls, 'extra'):
+            # NOTE(notmorgan): No translation here, This is an error for
+            # programmers NOT end users.
+            raise AttributeError(cls._msg)  # no qa
+
+        new_d['extra'] = {k: new_d.pop(k) for k in d.keys()
+                          if k not in cls.attributes and k != 'extra'}
+
+        return cls(**new_d)
+
+    def to_dict(self, include_extra_dict=False):
+        """Return the model's attributes as a dictionary.
+
+        If include_extra_dict is True, 'extra' attributes are literally
+        included in the resulting dictionary twice, for backwards-compatibility
+        with a broken implementation.
+
+        """
+        if not hasattr(self, 'extra'):
+            # NOTE(notmorgan): No translation here, This is an error for
+            # programmers NOT end users.
+            raise AttributeError(self._msg)  # no qa
+
+        d = self.extra.copy()
+        for attr in self.__class__.attributes:
+            d[attr] = getattr(self, attr)
+
+        if include_extra_dict:
+            d['extra'] = self.extra.copy()
+
+        return d
+
+    def __getitem__(self, key):
+        """Evaluate if key is in extra or not, to return correct item."""
+        if key in self.extra:
+            return self.extra[key]
+        return getattr(self, key)
