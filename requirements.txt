@@ -1,4 +1,5 @@
 alembic~=1.11.1
+dogpile.cache~=1.2.1
 fastapi~=0.98.0
 fixtures~=4.1.0
 iso8601~=2.0.0
