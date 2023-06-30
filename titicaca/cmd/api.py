@@ -15,13 +15,13 @@ import os
 import sys
 
 import uvicorn
-
 from oslo_reports import guru_meditation_report as gmr
 from oslo_utils import encodeutils
 
 # If ../titicaca/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
-BASE_PATH = os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir, os.pardir, os.pardir))
+BASE_PATH = os.path.normpath(
+    os.path.join(os.path.abspath(__file__), os.pardir, os.pardir, os.pardir))
 STATIC_PATH = os.path.join(BASE_PATH, 'static')
 
 if os.path.exists(os.path.join(BASE_PATH, 'titicaca', '__init__.py')):
@@ -108,7 +108,7 @@ def create_titicaca():
             )
 
         app.include_router(root_router)
-        app.include_router(api_router, prefix="/api/v1")
+        app.include_router(api_router, prefix="/v1")
 
         return app
     except Exception as e:

@@ -15,6 +15,7 @@ from titicaca.db.sqlalchemy.alembic_migrations import add_metadefs_tables
 from titicaca.db.sqlalchemy.alembic_migrations import add_tasks_tables
 from titicaca.db.sqlalchemy.alembic_migrations import add_identity_tables
 from titicaca.db.sqlalchemy.alembic_migrations import add_federation_tables
+from titicaca.db.sqlalchemy.alembic_migrations import add_resource_tables
 
 # revision identifiers, used by Alembic.
 revision = 'alpha'
@@ -28,4 +29,4 @@ def upgrade():
     add_identity_tables.upgrade()
     add_metadefs_tables.upgrade()
     add_tasks_tables.upgrade()
-
+    add_resource_tables.upgrade()

@@ -5,7 +5,6 @@
 Routines for configuring Titicaca
 """
 
-import logging
 import os
 
 from oslo_config import cfg
@@ -564,7 +563,6 @@ be the same interpreter running Titicaca itself. However, in some situations
 interpreter and an alternative value must be set.""")),
 ]
 
-
 CONF = cfg.CONF
 CONF.register_opts(task_opts, group='task')
 CONF.register_opts(common_opts)
@@ -623,11 +621,13 @@ def _get_deployment_config_file():
         raise RuntimeError(msg)
     return os.path.abspath(path)
 
+
 def set_config_defaults():
     """This method updates all configuration default values."""
 
     # TODO(gmann): Remove setting the default value of config policy_file
     # once oslo_policy change the default value to 'policy.yaml'.
-    # https://github.com/openstack/oslo.policy/blob/a626ad12fe5a3abd49d70e3e5b95589d279ab578/oslo_policy/opts.py#L49
+    # https://github.com/openstack/oslo.policy/blob/a626ad12fe5a3abd49d70e3e5b95589d279ab578
+    # /oslo_policy/opts.py#L49
     DEFAULT_POLICY_FILE = 'policy.yaml'
     opts.set_defaults(cfg.CONF, DEFAULT_POLICY_FILE)

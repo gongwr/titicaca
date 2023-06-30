@@ -13,7 +13,7 @@ from sqlalchemy.orm import collections, relationship
 
 from titicaca.common import password_hashing
 from titicaca.common import resource_options
-from titicaca.common.resource_options import identity_resource_options as iro
+from titicaca.common.resource_options import user_resource_options as uro
 from titicaca.db.sqlalchemy.models.base import BASE
 from titicaca.db.sqlalchemy.models.base import JSONEncodedDict, DateTimeInt
 from titicaca.db.sqlalchemy.models.base import ModelDictMixin, ModelDictMixinWithExtras
@@ -27,7 +27,7 @@ class User(BASE, ModelDictMixinWithExtras):
     attributes = ['id', 'name', 'domain_id', 'password', 'enabled',
                   'default_project_id', 'password_expires_at']
     readonly_attributes = ['id', 'password_expires_at', 'password']
-    resource_options_registry = iro.USER_OPTIONS_REGISTRY
+    resource_options_registry = uro.USER_OPTIONS_REGISTRY
     id = Column(String(64), primary_key=True)
     domain_id = Column(String(64), nullable=False)
     _enabled = Column('enabled', Boolean)
@@ -167,7 +167,7 @@ class User(BASE, ModelDictMixinWithExtras):
         # Get the IGNORE_PASSWORD_EXPIRY_OPT value from the user's
         # option_mapper.
         return getattr(
-            self.get_resource_option(iro.IGNORE_PASSWORD_EXPIRY_OPT.option_id),
+            self.get_resource_option(uro.IGNORE_PASSWORD_EXPIRY_OPT.option_id),
             'option_value',
             False)
 
@@ -193,8 +193,7 @@ class User(BASE, ModelDictMixinWithExtras):
             max_days = (
                 CONF.security_compliance.disable_user_account_days_inactive)
             inactivity_exempt = getattr(
-                self.get_resource_option(
-                    iro.IGNORE_USER_INACTIVITY_OPT.option_id),
+                self.get_resource_option(uro.IGNORE_USER_INACTIVITY_OPT.option_id),
                 'option_value',
                 False)
             last_active = self.last_active_at
