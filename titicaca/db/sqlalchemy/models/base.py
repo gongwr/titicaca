@@ -23,6 +23,7 @@ from titicaca.i18n import _
 
 BASE = declarative_base()
 
+NULL_DOMAIN_ID = '<<null>>'
 
 class TiticacaBase(models.ModelBase, models.TimestampMixin):
     """Base class for Titicaca Models."""

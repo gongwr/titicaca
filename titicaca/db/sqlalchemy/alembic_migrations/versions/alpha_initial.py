@@ -12,6 +12,7 @@ Create Date: 2016-08-03 16:06:59.657433
 """
 
 from titicaca.db.sqlalchemy.alembic_migrations import add_metadefs_tables
+from titicaca.db.sqlalchemy.alembic_migrations import add_role_tables
 from titicaca.db.sqlalchemy.alembic_migrations import add_tasks_tables
 from titicaca.db.sqlalchemy.alembic_migrations import add_identity_tables
 from titicaca.db.sqlalchemy.alembic_migrations import add_federation_tables
@@ -30,3 +31,4 @@ def upgrade():
     add_metadefs_tables.upgrade()
     add_tasks_tables.upgrade()
     add_resource_tables.upgrade()
+    add_role_tables.upgrade()
