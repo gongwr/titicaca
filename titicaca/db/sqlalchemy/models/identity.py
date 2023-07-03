@@ -39,7 +39,7 @@ class User(ModelBase, ModelDictMixinWithExtras):
         cascade='all,delete,delete-orphan',
         lazy='subquery',
         backref='user',
-        collection_class=collections.attribute_keyed_dict('option_id'))
+        collection_class=collections.attribute_mapped_collection('option_id'))
     local_user = relationship('LocalUser', uselist=False,
                               single_parent=True, lazy='joined',
                               cascade='all,delete-orphan', backref='user')

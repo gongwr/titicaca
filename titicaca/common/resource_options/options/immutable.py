@@ -13,7 +13,7 @@
 # Implement the "Immutable" resource option
 from titicaca.common.resource_options import core as ro_core
 from titicaca.common.validation import parameter_types
-from titicaca import exception
+from titicaca.common import exception
 
 IMMUTABLE_OPT = (
     ro_core.ResourceOption(

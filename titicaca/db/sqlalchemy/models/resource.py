@@ -80,7 +80,7 @@ class Project(ModelBase, ModelDictMixinWithExtras):
         cascade='all,delete,delete-orphan',
         lazy='subquery',
         backref='project',
-        collection_class=collections.attribute_keyed_dict('option_id')
+        collection_class=collections.attribute_mapped_collection('option_id')
     )
 
     # Unique constraint across two columns to create the separation

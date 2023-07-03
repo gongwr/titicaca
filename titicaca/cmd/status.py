@@ -16,10 +16,7 @@ import sys
 
 import titicaca_store
 from oslo_config import cfg
-from oslo_upgradecheck import common_checks
-from oslo_upgradecheck import upgradecheck
 
-from titicaca.common import removed_config
 from titicaca.common import wsgi  # noqa
 
 CONF = cfg.CONF
