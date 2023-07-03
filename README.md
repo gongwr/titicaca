@@ -28,3 +28,7 @@ or
 ```bash
 python titicaca-api --config-file ./etc/titicaca-api.conf
 ```
+
+```bash
+SQLALCHEMY_WARN_20=1 python -W always::DeprecationWarning titicaca-manage --config-file ./etc/titicaca-manage.conf db load_metadefs/Users/gongwr/Workspace/pyCharm/titicaca
+```

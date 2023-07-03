@@ -46,7 +46,7 @@ def initialize():
 def initialize_decorator(init):
     """Ensure that the length of string field do not exceed the limit.
 
-    This decorator check the initialize arguments, to make sure the
+    This decorator check the initializer arguments, to make sure the
     length of string field do not exceed the length limit, or raise a
     'StringLengthExceeded' exception.
 

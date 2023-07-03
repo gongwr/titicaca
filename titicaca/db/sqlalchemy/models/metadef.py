@@ -17,7 +17,7 @@ from titicaca.db.sqlalchemy.models.base import ModelBase
 from titicaca.db.sqlalchemy.models.base import JSONEncodedDict
 
 
-class DictionaryBase(ModelBase, models.ModelBase):
+class DictionaryBase(models.ModelBase):
     metadata = None
 
     def to_dict(self):

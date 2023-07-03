@@ -26,7 +26,7 @@ log_config.fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = base.BASE.metadata
+target_metadata = base.ModelBase.metadata
 for table in metadef.BASE_DICT.metadata.sorted_tables:
     target_metadata._add_table(table.name, table.schema, table)
 

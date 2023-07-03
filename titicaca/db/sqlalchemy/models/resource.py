@@ -9,7 +9,7 @@ from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import collections, relationship
 
 from titicaca.common import resource_options
-from titicaca.db.sqlalchemy.models.base import BASE
+from titicaca.db.sqlalchemy.models.base import ModelBase
 from titicaca.db.sqlalchemy.models.base import ModelDictMixin, ModelDictMixinWithExtras
 from titicaca.db.sqlalchemy.models.base import JSONEncodedDict
 from titicaca.common.resource_options import project_resource_options as pro
@@ -17,7 +17,7 @@ from titicaca.common.resource_options import project_resource_options as pro
 NULL_DOMAIN_ID = '<<null>>'
 
 
-class Project(BASE, ModelDictMixinWithExtras):
+class Project(ModelBase, ModelDictMixinWithExtras):
     # NOTE(henry-nash): From the manager and above perspective, the domain_id
     # is nullable.  However, to ensure uniqueness in multiprocess
     # configurations, it is better to still use the sql uniqueness constraint.
@@ -104,7 +104,7 @@ class Project(BASE, ModelDictMixinWithExtras):
         self._tags = new_tags
 
 
-class ProjectTag(BASE, ModelDictMixin):
+class ProjectTag(ModelBase, ModelDictMixin):
 
     def to_dict(self):
         d = super(ProjectTag, self).to_dict()
@@ -119,7 +119,7 @@ class ProjectTag(BASE, ModelDictMixin):
     __table_args__ = (UniqueConstraint('project_id', 'name'),)
 
 
-class ProjectOption(BASE):
+class ProjectOption(ModelBase):
     __tablename__ = 'project_option'
     project_id = Column(String(64),
                         ForeignKey('project.id', ondelete='CASCADE'),

@@ -435,6 +435,7 @@ class UserOption(ModelBase):
                        primary_key=True)
     option_value = Column(JSONEncodedDict(), default={}, nullable=True)
 
-    def __init__(self, option_id, option_value):
+    def __init__(self, option_id, option_value, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.option_id = option_id
         self.option_value = option_value
