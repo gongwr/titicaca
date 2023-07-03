@@ -14,7 +14,7 @@ from sqlalchemy.orm import collections, relationship
 from titicaca.common import password_hashing
 from titicaca.common import resource_options
 from titicaca.common.resource_options import user_resource_options as uro
-from titicaca.db.sqlalchemy.models.base import BASE
+from titicaca.db.sqlalchemy.models.base import ModelBase
 from titicaca.db.sqlalchemy.models.base import JSONEncodedDict, DateTimeInt
 from titicaca.db.sqlalchemy.models.base import ModelDictMixin, ModelDictMixinWithExtras
 
@@ -22,7 +22,7 @@ LOG = log.getLogger(__name__)
 CONF = cfg.CONF
 
 
-class User(BASE, ModelDictMixinWithExtras):
+class User(ModelBase, ModelDictMixinWithExtras):
     __tablename__ = 'user'
     attributes = ['id', 'name', 'domain_id', 'password', 'enabled',
                   'default_project_id', 'password_expires_at']
@@ -264,7 +264,7 @@ class User(BASE, ModelDictMixinWithExtras):
         return user_obj
 
 
-class LocalUser(BASE, ModelDictMixin):
+class LocalUser(ModelBase, ModelDictMixin):
     __tablename__ = 'local_user'
     attributes = ['id', 'user_id', 'domain_id', 'name']
     id = Column(Integer, primary_key=True)
@@ -288,7 +288,7 @@ class LocalUser(BASE, ModelDictMixin):
     )
 
 
-class Password(BASE, ModelDictMixin):
+class Password(ModelBase, ModelDictMixin):
     __tablename__ = 'password'
     attributes = ['id', 'local_user_id', 'password_hash', 'created_at',
                   'expires_at']
@@ -332,7 +332,7 @@ class Password(BASE, ModelDictMixin):
         self.expires_at_int = value
 
 
-class FederatedUser(BASE, ModelDictMixin):
+class FederatedUser(ModelBase, ModelDictMixin):
     __tablename__ = 'federated_user'
     attributes = ['id', 'user_id', 'idp_id', 'protocol_id', 'unique_id',
                   'display_name']
@@ -353,7 +353,7 @@ class FederatedUser(BASE, ModelDictMixin):
     )
 
 
-class NonLocalUser(BASE, ModelDictMixin):
+class NonLocalUser(ModelBase, ModelDictMixin):
     """SQL data model for nonlocal users (LDAP and custom)."""
 
     __tablename__ = 'nonlocal_user'
@@ -368,7 +368,7 @@ class NonLocalUser(BASE, ModelDictMixin):
             onupdate='CASCADE', ondelete='CASCADE'),)
 
 
-class Group(BASE, ModelDictMixinWithExtras):
+class Group(ModelBase, ModelDictMixinWithExtras):
     __tablename__ = 'group'
     attributes = ['id', 'name', 'domain_id', 'description']
     id = Column(String(64), primary_key=True)
@@ -386,7 +386,7 @@ class Group(BASE, ModelDictMixinWithExtras):
     __table_args__ = (UniqueConstraint('domain_id', 'name'),)
 
 
-class UserGroupMembership(BASE, ModelDictMixin):
+class UserGroupMembership(ModelBase, ModelDictMixin):
     """Group membership join table."""
 
     __tablename__ = 'user_group_membership'
@@ -398,7 +398,7 @@ class UserGroupMembership(BASE, ModelDictMixin):
                       primary_key=True)
 
 
-class ExpiringUserGroupMembership(BASE, ModelDictMixin):
+class ExpiringUserGroupMembership(ModelBase, ModelDictMixin):
     """Expiring group membership through federation mapping rules."""
 
     __tablename__ = 'expiring_user_group_membership'
@@ -426,7 +426,7 @@ class ExpiringUserGroupMembership(BASE, ModelDictMixin):
         return self.expires <= datetime.datetime.utcnow()
 
 
-class UserOption(BASE):
+class UserOption(ModelBase):
     __tablename__ = 'user_option'
     user_id = Column(String(64), ForeignKey('user.id',
                                             ondelete='CASCADE'), nullable=False,

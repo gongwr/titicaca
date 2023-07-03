@@ -6,12 +6,14 @@ from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy import String
 from sqlalchemy.orm import collections, relationship
 
-from titicaca.db.sqlalchemy.models.base import BASE, NULL_DOMAIN_ID
+from titicaca.common import resource_options
+from titicaca.common.resource_options import role_resource_option as rro
+from titicaca.db.sqlalchemy.models.base import ModelBase, NULL_DOMAIN_ID
 from titicaca.db.sqlalchemy.models.base import JSONEncodedDict
 from titicaca.db.sqlalchemy.models.base import ModelDictMixin, ModelDictMixinWithExtras
 
 
-class RoleTable(BASE, ModelDictMixinWithExtras):
+class RoleTable(ModelBase, ModelDictMixinWithExtras):
 
     def to_dict(self, include_extra_dict=False):
         d = super(RoleTable, self).to_dict(
@@ -46,7 +48,7 @@ class RoleTable(BASE, ModelDictMixinWithExtras):
 
     __tablename__ = 'role'
     attributes = ['id', 'name', 'domain_id', 'description']
-    resource_options_registry = ro.ROLE_OPTIONS_REGISTRY
+    resource_options_registry = rro.ROLE_OPTIONS_REGISTRY
     id = Column(String(64), primary_key=True)
     name = Column(String(255), nullable=False)
     domain_id = Column(String(64), nullable=False,
@@ -64,7 +66,7 @@ class RoleTable(BASE, ModelDictMixinWithExtras):
     __table_args__ = (UniqueConstraint('name', 'domain_id'),)
 
 
-class ImpliedRoleTable(BASE, ModelDictMixin):
+class ImpliedRoleTable(ModelBase, ModelDictMixin):
     __tablename__ = 'implied_role'
     attributes = ['prior_role_id', 'implied_role_id']
     prior_role_id = Column(
@@ -93,7 +95,7 @@ class ImpliedRoleTable(BASE, ModelDictMixin):
         return d
 
 
-class RoleOption(BASE):
+class RoleOption(ModelBase):
     __tablename__ = 'role_option'
     role_id = Column(String(64),
                      ForeignKey('role.id', ondelete='CASCADE'),

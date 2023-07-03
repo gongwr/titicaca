@@ -18,8 +18,7 @@ from time import sleep
 
 from oslo_config import cfg
 from oslo_log import log as logging
-from oslo_utils import excutils
-from oslo_utils import netutils
+from oslo_utils import excutils, netutils, strutils
 from webob import exc
 
 from titicaca.common import exception
@@ -356,3 +355,15 @@ def evaluate_filter_op(value, operator, threshold):
 
     msg = _("Unable to filter on a unknown operator.")
     raise exception.InvalidFilterOperatorValue(msg)
+
+
+def attr_as_boolean(val_attr):
+    """Return the boolean value, decoded from a string.
+
+    We test explicitly for a value meaning False, which can be one of
+    several formats as specified in oslo strutils.FALSE_STRINGS.
+    All other string values (including an empty string) are treated as
+    meaning True.
+
+    """
+    return strutils.bool_from_string(val_attr, default=True)

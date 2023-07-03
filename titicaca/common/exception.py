@@ -558,3 +558,90 @@ class SchemaValidationError(ValidationError):
     # NOTE(lbragstad): For whole OpenStack message consistency, this error
     # message has been written in a format consistent with WSME.
     message_format = _("%(detail)s")
+
+
+class StringLengthExceeded(ValidationError):
+    message_format = _("String length exceeded. The length of"
+                       " string '%(string)s' exceeds the limit"
+                       " of column %(type)s(CHAR(%(length)d)).")
+
+
+class SecurityError(Error):
+    """Security error exception.
+
+    Avoids exposing details of security errors, unless in insecure_debug mode.
+
+    """
+
+    amendment = _('(Disable insecure_debug mode to suppress these details.)')
+
+    def __deepcopy__(self):
+        """Override the default deepcopy.
+
+        Keystone :class:`keystone.exception.Error` accepts an optional message
+        that will be used when rendering the exception object as a string. If
+        not provided the object's message_format attribute is used instead.
+        :class:`keystone.exception.SecurityError` is a little different in
+        that it only uses the message provided to the initializer when
+        keystone is in `insecure_debug` mode. Instead, it will use its
+        `message_format`. This is to ensure that sensitive details are not
+        leaked back to the caller in a production deployment.
+
+        This dual mode for string rendering causes some odd behaviour when
+        combined with oslo_i18n translation. Any object used as a value for
+        formatting a translated string is deeply copied.
+
+        The copy causes an issue. The deep copy process actually creates a new
+        exception instance with the rendered string. Then when that new
+        instance is rendered as a string to use for substitution a warning is
+        logged. This is because the code tries to use the `message_format` in
+        secure mode, but the required kwargs are not in the deep copy.
+
+        The end result is not an error because when the KeyError is caught the
+        instance's ``message`` is used instead and this has the properly
+        translated message. The only indication that something is wonky is a
+        message in the warning log.
+        """
+        return self
+
+    def _build_message(self, message, **kwargs):
+        """Only returns detailed messages in insecure_debug mode."""
+        if message and CONF.insecure_debug:
+            if isinstance(message, str):
+                # Only do replacement if message is string. The message is
+                # sometimes a different exception or bytes, which would raise
+                # TypeError.
+                message = _format_with_unicode_kwargs(message, kwargs)
+            return _('%(message)s %(amendment)s') % {
+                'message': message,
+                'amendment': self.amendment}
+
+        return _format_with_unicode_kwargs(self.message_format, kwargs)
+
+
+class Unauthorized(SecurityError):
+    message_format = _("The request you have made requires authentication.")
+    code = int(http.client.UNAUTHORIZED)
+    title = http.client.responses[http.client.UNAUTHORIZED]
+
+
+class UnexpectedError(SecurityError):
+    """Avoids exposing details of failures, unless in insecure_debug mode."""
+
+    message_format = _("An unexpected error prevented the server "
+                       "from fulfilling your request.")
+
+    debug_message_format = _("An unexpected error prevented the server "
+                             "from fulfilling your request: %(exception)s.")
+
+    def _build_message(self, message, **kwargs):
+        # Ensure that exception has a value to be extra defensive for
+        # substitutions and make sure the exception doesn't raise an
+        # exception.
+        kwargs.setdefault('exception', '')
+
+        return super(UnexpectedError, self)._build_message(
+            message or self.debug_message_format, **kwargs)
+
+    code = int(http.client.INTERNAL_SERVER_ERROR)
+    title = http.client.responses[http.client.INTERNAL_SERVER_ERROR]

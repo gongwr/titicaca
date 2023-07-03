@@ -11,19 +11,74 @@ SQLAlchemy models for titicaca data
 import datetime
 
 import pytz
+from oslo_config import cfg
+from oslo_log import log
+from oslo_db import options as db_options
 from oslo_db.sqlalchemy import models
 from oslo_serialization import jsonutils
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Text
-from sqlalchemy import types as sql_types
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.types import TypeDecorator
+from osprofiler import opts as profiler
 
+from sqlalchemy import Column
+from sqlalchemy import BigInteger, Boolean, DateTime, String, Text
+from sqlalchemy.ext import declarative
+from sqlalchemy.types import TypeDecorator
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+
+from titicaca.common import exception
 from titicaca.common import timeutils
 from titicaca.i18n import _
 
-BASE = declarative_base()
+CONF = cfg.CONF
+LOG = log.getLogger(__name__)
+
+ModelBase = declarative.declarative_base()
+
+
+def initialize():
+    """Initialize the module."""
+    db_options.set_defaults(
+        CONF,
+        connection="sqlite:///keystone.db")
+    # Configure OSprofiler options
+    profiler.set_defaults(CONF, enabled=False, trace_sqlalchemy=False)
+
+
+def initialize_decorator(init):
+    """Ensure that the length of string field do not exceed the limit.
+
+    This decorator check the initialize arguments, to make sure the
+    length of string field do not exceed the length limit, or raise a
+    'StringLengthExceeded' exception.
+
+    Use decorator instead of inheritance, because the metaclass will
+    check the __tablename__, primary key columns, etc. at the class
+    definition.
+
+    """
+
+    def initialize(self, *args, **kwargs):
+        cls = type(self)
+        for k, v in kwargs.items():
+            if hasattr(cls, k):
+                attr = getattr(cls, k)
+                if isinstance(attr, InstrumentedAttribute):
+                    column = attr.property.columns[0]
+                    if isinstance(column.type, String):
+                        if not isinstance(v, str):
+                            v = str(v)
+                        if column.type.length and column.type.length < len(v):
+                            raise exception.StringLengthExceeded(
+                                string=v, type=k, length=column.type.length)
+
+        init(self, *args, **kwargs)
+
+    return initialize
+
+
+ModelBase.__init__ = initialize_decorator(ModelBase.__init__)
 
 NULL_DOMAIN_ID = '<<null>>'
+
 
 class TiticacaBase(models.ModelBase, models.TimestampMixin):
     """Base class for Titicaca Models."""
@@ -75,7 +130,7 @@ class TiticacaBase(models.ModelBase, models.TimestampMixin):
         return d
 
 
-class DateTimeInt(sql_types.TypeDecorator):
+class DateTimeInt(TypeDecorator):
     """A column that automatically converts a datetime object to an Int.
 
     Titicaca relies on accurate (sub-second) datetime objects. In some cases
@@ -141,7 +196,6 @@ class JSONEncodedDict(TypeDecorator):
         if value is not None:
             value = jsonutils.loads(value)
         return value
-
 
 
 class ModelDictMixin(models.ModelBase):

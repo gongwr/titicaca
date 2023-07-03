@@ -7,10 +7,10 @@ from oslo_db.sqlalchemy import models
 from sqlalchemy import Column, DateTime, ForeignKey, Index, String, Text
 from sqlalchemy.orm import backref, relationship
 
-from titicaca.db.sqlalchemy.models.base import BASE, TiticacaBase, JSONEncodedDict
+from titicaca.db.sqlalchemy.models.base import ModelBase, TiticacaBase, JSONEncodedDict
 
 
-class Task(BASE, TiticacaBase):
+class Task(ModelBase, TiticacaBase):
     """Represents a task in the datastore"""
     __tablename__ = 'tasks'
     __table_args__ = (Index('ix_tasks_type', 'type'),
@@ -29,7 +29,7 @@ class Task(BASE, TiticacaBase):
     user_id = Column(String(64), nullable=True)
 
 
-class TaskInfo(BASE, models.ModelBase):
+class TaskInfo(ModelBase, models.ModelBase):
     """Represents task info in the datastore"""
     __tablename__ = 'task_info'
 

@@ -8,11 +8,11 @@ from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 
-from titicaca.db.sqlalchemy.models.base import BASE, ModelDictMixin
+from titicaca.db.sqlalchemy.models.base import ModelBase, ModelDictMixin
 from titicaca.db.sqlalchemy.models.base import JSONEncodedDict
 
 
-class FederationProtocol(BASE, ModelDictMixin):
+class FederationProtocol(ModelBase, ModelDictMixin):
     __tablename__ = 'federation_protocol'
     attributes = ['id', 'idp_id', 'mapping_id', 'remote_id_attribute']
     mutable_attributes = frozenset(['mapping_id', 'remote_id_attribute'])
@@ -36,7 +36,7 @@ class FederationProtocol(BASE, ModelDictMixin):
         return d
 
 
-class IdentityProvider(BASE, ModelDictMixin):
+class IdentityProvider(ModelBase, ModelDictMixin):
     __tablename__ = 'identity_provider'
     attributes = ['id', 'domain_id', 'enabled', 'description', 'remote_ids',
                   'authorization_ttl']
@@ -85,7 +85,7 @@ class IdentityProvider(BASE, ModelDictMixin):
         return d
 
 
-class IdPRemoteIds(BASE, ModelDictMixin):
+class IdPRemoteIds(ModelBase, ModelDictMixin):
     __tablename__ = 'idp_remote_ids'
     attributes = ['idp_id', 'remote_id']
     mutable_attributes = frozenset(['idp_id', 'remote_id'])
@@ -109,7 +109,7 @@ class IdPRemoteIds(BASE, ModelDictMixin):
         return d
 
 
-class Mapping(BASE, ModelDictMixin):
+class Mapping(ModelBase, ModelDictMixin):
     __tablename__ = 'mapping'
     attributes = ['id', 'rules']
 
@@ -131,7 +131,7 @@ class Mapping(BASE, ModelDictMixin):
         return d
     
 
-class ServiceProvider(BASE, ModelDictMixin):
+class ServiceProvider(ModelBase, ModelDictMixin):
     __tablename__ = 'service_provider'
     attributes = ['auth_url', 'id', 'enabled', 'description',
                   'relay_state_prefix', 'sp_url']
