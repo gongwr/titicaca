@@ -17,7 +17,8 @@ import time
 
 # If ../titicaca/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
-BASE_PATH = os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir, os.pardir, os.pardir))
+BASE_PATH = os.path.normpath(
+    os.path.join(os.path.abspath(__file__), os.pardir, os.pardir, os.pardir))
 if os.path.exists(os.path.join(BASE_PATH, 'titicaca', '__init__.py')):
     sys.path.insert(0, BASE_PATH)
 
@@ -161,7 +162,8 @@ class DbCommands(object):
         if version == 'heads':
             print(_("Upgraded database, current revision(s):"), revs)
         else:
-            print(_('Upgraded database to: %(v)s, current revision(s): %(r)s') % {'v': version, 'r': revs})
+            print(_('Upgraded database to: %(v)s, current revision(s): %(r)s') % {'v': version,
+                                                                                  'r': revs})
 
     def _validate_engine(self, engine):
         """Check engine is valid or not.
@@ -266,15 +268,18 @@ class DbCommands(object):
 
     @args('--path', metavar='<path>', help='Path to the directory or file '
                                            'where json metadata is stored')
-    @args('--merge', action='store_true', help='Merge files with data that is in the database. By default it '
-                                               'prefers existing data over new. This logic can be changed by '
-                                               'combining --merge option with one of these two options: '
-                                               '--prefer_new or --overwrite.')
-    @args('--prefer_new', action='store_true', help='Prefer new metadata over existing. Existing metadata '
-                                                    'might be overwritten. Needs to be combined with --merge '
-                                                    'option.')
-    @args('--overwrite', action='store_true', help='Drop and rewrite metadata. Needs to be combined with --merge '
-                                                   'option')
+    @args('--merge', action='store_true',
+          help='Merge files with data that is in the database. By default it '
+               'prefers existing data over new. This logic can be changed by '
+               'combining --merge option with one of these two options: '
+               '--prefer_new or --overwrite.')
+    @args('--prefer_new', action='store_true',
+          help='Prefer new metadata over existing. Existing metadata '
+               'might be overwritten. Needs to be combined with --merge '
+               'option.')
+    @args('--overwrite', action='store_true',
+          help='Drop and rewrite metadata. Needs to be combined with --merge '
+               'option')
     def load_metadefs(self, path=None, merge=False, prefer_new=False, overwrite=False):
         """Load metadefinition json files to database"""
         metadata.db_load_metadefs(db_api.get_engine(), path, merge, prefer_new, overwrite)
@@ -354,8 +359,8 @@ class DbLegacyCommands(object):
         self.command_object.check()
 
     def load_metadefs(self, path=None, merge=False, prefer_new=False, overwrite=False):
-        self.command_object.load_metadefs(CONF.command.path, CONF.command.merge, CONF.command.prefer_new,
-                                          CONF.command.overwrite)
+        self.command_object.load_metadefs(CONF.command.path, CONF.command.merge,
+                                          CONF.command.prefer_new, CONF.command.overwrite)
 
     def unload_metadefs(self):
         self.command_object.unload_metadefs()
@@ -452,7 +457,8 @@ def add_command_parsers(subparsers):
         add_legacy_command_parsers(command_object, subparsers)
 
 
-command_opt = cfg.SubCommandOpt('command', title='Commands', help='Available commands', handler=add_command_parsers)
+command_opt = cfg.SubCommandOpt('command', title='Commands', help='Available commands',
+                                handler=add_command_parsers)
 
 CATEGORIES = {'db': DbCommands, }
 

@@ -5,11 +5,10 @@
 
 from oslo_db import exception as db_exc
 from oslo_log import log as logging
-import sqlalchemy.exc as sa_exc
-import sqlalchemy.orm as sa_orm
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
-from titicaca.common import exception as exc
 import titicaca.db.sqlalchemy.metadef_api.utils as metadef_utils
+from titicaca.common import exception as exc
 from titicaca.db.sqlalchemy.models import metadef as models
 
 LOG = logging.getLogger(__name__)
@@ -21,7 +20,7 @@ def get(context, name, session):
     try:
         query = session.query(models.MetadefResourceType).filter_by(name=name)
         resource_type = query.one()
-    except sa_orm.exc.NoResultFound:
+    except NoResultFound:
         LOG.debug("No metadata definition resource-type found with name %s",
                   name)
         raise exc.MetadefResourceTypeNotFound(resource_type_name=name)
@@ -86,7 +85,7 @@ def delete(context, name, session):
         session.delete(db_rec)
         session.flush()
     except db_exc.DBError as e:
-        if isinstance(e.inner_exception, sa_exc.IntegrityError):
+        if isinstance(e.inner_exception, IntegrityError):
             LOG.debug("Could not delete Metadata definition resource-type %s"
                       ". It still has content", name)
             raise exc.MetadefIntegrityError(

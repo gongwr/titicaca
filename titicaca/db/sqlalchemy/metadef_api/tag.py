@@ -7,7 +7,7 @@ from oslo_db import exception as db_exc
 from oslo_db.sqlalchemy.utils import paginate_query
 from oslo_log import log as logging
 from sqlalchemy import func
-import sqlalchemy.orm as sa_orm
+from sqlalchemy.exc import NoResultFound
 
 from titicaca.common import exception as exc
 from titicaca.db.sqlalchemy.metadef_api import namespace as namespace_api
@@ -21,7 +21,7 @@ def _get(context, id, session):
     try:
         query = (session.query(models.MetadefTag).filter_by(id=id))
         metadef_tag = query.one()
-    except sa_orm.exc.NoResultFound:
+    except NoResultFound:
         msg = ("Metadata tag not found for id %s" % id)
         LOG.warning(msg)
         raise exc.MetadefTagNotFound(message=msg)
@@ -34,7 +34,7 @@ def _get_by_name(context, namespace_name, name, session):
         query = (session.query(models.MetadefTag).filter_by(
             name=name, namespace_id=namespace['id']))
         metadef_tag = query.one()
-    except sa_orm.exc.NoResultFound:
+    except NoResultFound:
         LOG.debug("The metadata tag with name=%(name)s"
                   " was not found in namespace=%(namespace_name)s.",
                   {'name': name, 'namespace_name': namespace_name})
@@ -137,7 +137,7 @@ def get(context, namespace_name, name, session):
 
 
 def update(context, namespace_name, id, values, session):
-    """Update an tag, raise if ns not found/visible or duplicate result"""
+    """Update a tag, raise if ns not found/visible or duplicate result"""
     namespace_api.get(context, namespace_name, session)
 
     metadata_tag = _get(context, id, session)
@@ -170,7 +170,6 @@ def delete(context, namespace_name, name, session):
 
 def delete_namespace_content(context, namespace_id, session):
     """Use this def only if the ns for the id has been verified as visible"""
-    count = 0
     query = (session.query(models.MetadefTag).filter_by(
         namespace_id=namespace_id))
     count = query.delete(synchronize_session='fetch')

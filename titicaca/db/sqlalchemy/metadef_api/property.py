@@ -6,7 +6,7 @@
 from oslo_db import exception as db_exc
 from oslo_log import log as logging
 from sqlalchemy import func
-import sqlalchemy.orm as sa_orm
+from sqlalchemy.exc import NoResultFound
 
 from titicaca.common import exception as exc
 from titicaca.db.sqlalchemy.metadef_api import namespace as namespace_api
@@ -23,7 +23,7 @@ def _get(context, property_id, session):
         query = session.query(models.MetadefProperty).filter_by(id=property_id)
         property_rec = query.one()
 
-    except sa_orm.exc.NoResultFound:
+    except NoResultFound:
         msg = (_("Metadata definition property not found for id=%s")
                % property_id)
         LOG.warning(msg)
@@ -41,7 +41,7 @@ def _get_by_name(context, namespace_name, name, session):
             name=name, namespace_id=namespace['id'])
         property_rec = query.one()
 
-    except sa_orm.exc.NoResultFound:
+    except NoResultFound:
         LOG.debug("The metadata definition property with name=%(name)s"
                   " was not found in namespace=%(namespace_name)s.",
                   {'name': name, 'namespace_name': namespace_name})
@@ -132,7 +132,6 @@ def delete(context, namespace_name, property_name, session):
 def delete_namespace_content(context, namespace_id, session):
     """Use this def only if the ns for the id has been verified as visible"""
 
-    count = 0
     query = session.query(models.MetadefProperty).filter_by(
         namespace_id=namespace_id)
     count = query.delete(synchronize_session='fetch')

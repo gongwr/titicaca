@@ -7,10 +7,10 @@ from oslo_db.sqlalchemy.utils import paginate_query
 from oslo_log import log as logging
 import sqlalchemy.exc as sa_exc
 from sqlalchemy import or_
-import sqlalchemy.orm as sa_orm
+from sqlalchemy.exc import NoResultFound
 
 from titicaca.common import exception as exc
-import titicaca.db.sqlalchemy.metadef_api as metadef_api
+from titicaca.db.sqlalchemy import metadef_api
 from titicaca.db.sqlalchemy.models import metadef as models
 from titicaca.i18n import _
 
@@ -74,7 +74,7 @@ def _get(context, namespace_id, session):
         query = session.query(models.MetadefNamespace).filter_by(
             id=namespace_id)
         namespace_rec = query.one()
-    except sa_orm.exc.NoResultFound:
+    except NoResultFound:
         msg = (_("Metadata definition namespace not found for id=%s")
                % namespace_id)
         LOG.warning(msg)
@@ -98,7 +98,7 @@ def _get_by_name(context, name, session):
         query = session.query(models.MetadefNamespace).filter_by(
             namespace=name)
         namespace_rec = query.one()
-    except sa_orm.exc.NoResultFound:
+    except NoResultFound:
         LOG.debug("Metadata definition namespace=%s was not found.", name)
         raise exc.MetadefNamespaceNotFound(namespace_name=name)
 

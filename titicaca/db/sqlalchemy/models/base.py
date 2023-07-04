@@ -38,7 +38,7 @@ def initialize():
     """Initialize the module."""
     db_options.set_defaults(
         CONF,
-        connection="sqlite:///keystone.db")
+        connection="sqlite:///titicaca.db")
     # Configure OSprofiler options
     profiler.set_defaults(CONF, enabled=False, trace_sqlalchemy=False)
 

@@ -38,7 +38,7 @@ def _add_local_user_table():
         Column('failed_auth_count', Integer, nullable=True),
         Column('failed_auth_at', DateTime(), nullable=True),
         ForeignKeyConstraint(
-            ['user_id', 'domain_id'],
+            ["user_id", "domain_id"],
             ['user.id', 'user.domain_id'],
             name='local_user_user_id_fkey',
             onupdate='CASCADE',

@@ -19,10 +19,10 @@ from oslo_log import log as logging
 from oslo_utils import encodeutils
 from sqlalchemy import and_
 from sqlalchemy.schema import MetaData
-from sqlalchemy.sql import insert, select, update
+from sqlalchemy.sql import select
+from sqlalchemy.exc import IntegrityError
 
 from titicaca.common import timeutils
-from titicaca.db.sqlalchemy import api as db_api
 from titicaca.i18n import _
 
 LOG = logging.getLogger(__name__)
@@ -57,42 +57,37 @@ CONF.register_opts(metadata_opts)
 
 
 def get_metadef_namespaces_table(meta):
-    engine = db_api.get_engine()
-    return sqlalchemy.Table('metadef_namespaces', meta, autoload_with=engine)
+    return sqlalchemy.Table('metadef_namespaces', meta, autoload=True)
 
 
 def get_metadef_resource_types_table(meta):
-    engine = db_api.get_engine()
-    return sqlalchemy.Table('metadef_resource_types', meta, autoload_with=engine)
+    return sqlalchemy.Table('metadef_resource_types', meta, autoload=True)
 
 
 def get_metadef_namespace_resource_types_table(meta):
-    engine = db_api.get_engine()
     return sqlalchemy.Table('metadef_namespace_resource_types', meta,
-                            autoload_with=engine)
+                            autoload=True)
 
 
 def get_metadef_properties_table(meta):
-    engine = db_api.get_engine()
-    return sqlalchemy.Table('metadef_properties', meta, autoload_with=engine)
+    return sqlalchemy.Table('metadef_properties', meta, autoload=True)
 
 
 def get_metadef_objects_table(meta):
-    engine = db_api.get_engine()
-    return sqlalchemy.Table('metadef_objects', meta, autoload_with=engine)
+    return sqlalchemy.Table('metadef_objects', meta, autoload=True)
 
 
 def get_metadef_tags_table(meta):
-    engine = db_api.get_engine()
-    return sqlalchemy.Table('metadef_tags', meta, autoload_with=engine)
+    return sqlalchemy.Table('metadef_tags', meta, autoload=True)
 
 
-def _get_resource_type_id(session, meta, name):
+def _get_resource_type_id(meta, name):
     rt_table = get_metadef_resource_types_table(meta)
-    resource_type = session.execute(
-        select(rt_table.c.id).
+    resource_type = (
+        select([rt_table.c.id]).
         where(rt_table.c.name == name).
-        select_from(rt_table)).fetchone()
+        select_from(rt_table).
+        execute().fetchone())
     if resource_type:
         return resource_type[0]
     return None
@@ -115,16 +110,15 @@ def _get_namespace_resource_types(meta, namespace_id):
         execute().fetchall())
 
 
-def _get_namespace_resource_type_by_ids(session, meta, namespace_id, rt_id):
+def _get_namespace_resource_type_by_ids(meta, namespace_id, rt_id):
     namespace_resource_types_table = (
         get_metadef_namespace_resource_types_table(meta))
     return (
-        session.execute(
-            select(namespace_resource_types_table).
-            where(and_(
-                namespace_resource_types_table.c.namespace_id == namespace_id,
-                namespace_resource_types_table.c.resource_type_id == rt_id))).
-        fetchone())
+        namespace_resource_types_table.select().
+        where(and_(
+            namespace_resource_types_table.c.namespace_id == namespace_id,
+            namespace_resource_types_table.c.resource_type_id == rt_id)).
+        execute().fetchone())
 
 
 def _get_properties(meta, namespace_id):
@@ -151,14 +145,13 @@ def _get_tags(meta, namespace_id):
         execute().fetchall())
 
 
-def _get_resource_id(session, table, namespace_id, resource_name):
-    resource = session.execute(
-        select(table.c.id).
-        where(
-            and_(table.c.namespace_id == namespace_id,
-                 table.c.name == resource_name)
-        ).select_from(table)
-    ).fetchone()
+def _get_resource_id(table, namespace_id, resource_name):
+    resource = (
+        select([table.c.id]).
+        where(and_(table.c.namespace_id == namespace_id,
+                   table.c.name == resource_name)).
+        select_from(table).
+        execute().fetchone())
     if resource:
         return resource[0]
     return None
@@ -218,8 +211,6 @@ def _populate_metadata(meta, metadata_path=None, merge=False,
     properties_table = get_metadef_properties_table(meta)
     resource_types_table = get_metadef_resource_types_table(meta)
 
-    session = db_api.get_session()
-
     for json_schema_file in json_schema_files:
         try:
             file = join(metadata_path, json_schema_file)
@@ -241,14 +232,13 @@ def _populate_metadata(meta, metadata_path=None, merge=False,
             'owner': metadata.get('owner', 'admin')
         }
 
-        select_stmt = select(
-            namespaces_table.c.id
+        db_namespace = select(
+            [namespaces_table.c.id]
         ).where(
             namespaces_table.c.namespace == values['namespace']
         ).select_from(
             namespaces_table
-        )
-        db_namespace = session.execute(select_stmt).fetchone()
+        ).execute().fetchone()
 
         if db_namespace and overwrite:
             LOG.info("Overwriting namespace %s", values['namespace'])
@@ -257,40 +247,39 @@ def _populate_metadata(meta, metadata_path=None, merge=False,
 
         if not db_namespace:
             values.update({'created_at': timeutils.utcnow()})
-            _insert_data_to_db(session, namespaces_table, values)
+            _insert_data_to_db(namespaces_table, values)
 
-            select_stmt = select(
-                namespaces_table.c.id
+            db_namespace = select(
+                [namespaces_table.c.id]
             ).where(
                 namespaces_table.c.namespace == values['namespace']
             ).select_from(
                 namespaces_table
-            )
-            db_namespace = session.execute(select_stmt).fetchone()
+            ).execute().fetchone()
         elif not merge:
             LOG.info("Skipping namespace %s. It already exists in the "
                      "database.", values['namespace'])
             continue
         elif prefer_new:
             values.update({'updated_at': timeutils.utcnow()})
-            _update_data_in_db(session, namespaces_table, values,
+            _update_data_in_db(namespaces_table, values,
                                namespaces_table.c.id, db_namespace[0])
 
         namespace_id = db_namespace[0]
 
         for resource_type in metadata.get('resource_type_associations', []):
-            rt_id = _get_resource_type_id(session, meta, resource_type['name'])
+            rt_id = _get_resource_type_id(meta, resource_type['name'])
             if not rt_id:
                 val = {
                     'name': resource_type['name'],
                     'created_at': timeutils.utcnow(),
                     'protected': True
                 }
-                _insert_data_to_db(session, resource_types_table, val)
-                rt_id = _get_resource_type_id(session, meta, resource_type['name'])
+                _insert_data_to_db(resource_types_table, val)
+                rt_id = _get_resource_type_id(meta, resource_type['name'])
             elif prefer_new:
                 val = {'updated_at': timeutils.utcnow()}
-                _update_data_in_db(session, resource_types_table, val,
+                _update_data_in_db(resource_types_table, val,
                                    resource_types_table.c.id, rt_id)
 
             values = {
@@ -301,13 +290,13 @@ def _populate_metadata(meta, metadata_path=None, merge=False,
                 'prefix': resource_type.get('prefix')
             }
             namespace_resource_type = _get_namespace_resource_type_by_ids(
-                session, meta, namespace_id, rt_id)
+                meta, namespace_id, rt_id)
             if not namespace_resource_type:
                 values.update({'created_at': timeutils.utcnow()})
-                _insert_data_to_db(session, namespace_rt_table, values)
+                _insert_data_to_db(namespace_rt_table, values)
             elif prefer_new:
                 values.update({'updated_at': timeutils.utcnow()})
-                _update_rt_association(session, namespace_rt_table, values,
+                _update_rt_association(namespace_rt_table, values,
                                        rt_id, namespace_id)
 
         for name, schema in metadata.get('properties', {}).items():
@@ -317,14 +306,14 @@ def _populate_metadata(meta, metadata_path=None, merge=False,
                 'json_schema': json.dumps(schema)
             }
             property_id = _get_resource_id(
-                session, properties_table, namespace_id, name,
+                properties_table, namespace_id, name,
             )
             if not property_id:
                 values.update({'created_at': timeutils.utcnow()})
-                _insert_data_to_db(session, properties_table, values)
+                _insert_data_to_db(properties_table, values)
             elif prefer_new:
                 values.update({'updated_at': timeutils.utcnow()})
-                _update_data_in_db(session, properties_table, values,
+                _update_data_in_db(properties_table, values,
                                    properties_table.c.id, property_id)
 
         for object in metadata.get('objects', []):
@@ -335,14 +324,14 @@ def _populate_metadata(meta, metadata_path=None, merge=False,
                 'json_schema': json.dumps(
                     object.get('properties'))
             }
-            object_id = _get_resource_id(session, objects_table, namespace_id,
+            object_id = _get_resource_id(objects_table, namespace_id,
                                          object['name'])
             if not object_id:
                 values.update({'created_at': timeutils.utcnow()})
-                _insert_data_to_db(session, objects_table, values)
+                _insert_data_to_db(objects_table, values)
             elif prefer_new:
                 values.update({'updated_at': timeutils.utcnow()})
-                _update_data_in_db(session, objects_table, values,
+                _update_data_in_db(objects_table, values,
                                    objects_table.c.id, object_id)
 
         for tag in metadata.get('tags', []):
@@ -350,13 +339,13 @@ def _populate_metadata(meta, metadata_path=None, merge=False,
                 'name': tag.get('name'),
                 'namespace_id': namespace_id,
             }
-            tag_id = _get_resource_id(session, tags_table, namespace_id, tag['name'])
+            tag_id = _get_resource_id(tags_table, namespace_id, tag['name'])
             if not tag_id:
                 values.update({'created_at': timeutils.utcnow()})
-                _insert_data_to_db(session, tags_table, values)
+                _insert_data_to_db(tags_table, values)
             elif prefer_new:
                 values.update({'updated_at': timeutils.utcnow()})
-                _update_data_in_db(session, tags_table, values,
+                _update_data_in_db(tags_table, values,
                                    tags_table.c.id, tag_id)
 
         LOG.info("File %s loaded to database.", file)
@@ -364,31 +353,28 @@ def _populate_metadata(meta, metadata_path=None, merge=False,
     LOG.info("Metadata loading finished")
 
 
-def _insert_data_to_db(session, table, values, log_exception=True):
+def _insert_data_to_db(table, values, log_exception=True):
     try:
-        session.execute(insert(table).values(values))
-        session.commit()
-    except sqlalchemy.exc.IntegrityError:
+        table.insert(values=values).execute()
+    except IntegrityError:
         if log_exception:
             LOG.warning("Duplicate entry for values: %s", values)
 
 
-def _update_data_in_db(session, table, values, column, value):
+def _update_data_in_db(table, values, column, value):
     try:
-        session.execute(update(table).where(column == value).values(value))
-        session.commit()
-    except sqlalchemy.exc.IntegrityError:
+        (table.update(values=values).
+         where(column == value).execute())
+    except IntegrityError:
         LOG.warning("Duplicate entry for values: %s", values)
 
 
-def _update_rt_association(session, table, values, rt_id, namespace_id):
+def _update_rt_association(table, values, rt_id, namespace_id):
     try:
-        session.execute(update(table).
-                        where(and_(table.c.resource_type_id == rt_id,
-                                   table.c.namespace_id == namespace_id)).
-                        values(values))
-        session.commit()
-    except sqlalchemy.exc.IntegrityError:
+        (table.update(values=values).
+         where(and_(table.c.resource_type_id == rt_id,
+                    table.c.namespace_id == namespace_id)).execute())
+    except IntegrityError:
         LOG.warning("Duplicate entry for values: %s", values)
 
 
@@ -472,10 +458,10 @@ def _export_data_to_file(meta, path):
                 LOG.info("Overwriting: %s", file_name)
             with open(file_name, 'w', encoding='utf-8') as json_file:
                 json_file.write(json.dumps(values))
+            LOG.info("Namespace %(namespace)s saved in %(file)s", {
+                'namespace': namespace_file_name, 'file': file_name})
         except Exception as e:
             LOG.exception(encodeutils.exception_to_unicode(e))
-        LOG.info("Namespace %(namespace)s saved in %(file)s", {
-            'namespace': namespace_file_name, 'file': file_name})
 
 
 def db_load_metadefs(engine, metadata_path=None, merge=False,

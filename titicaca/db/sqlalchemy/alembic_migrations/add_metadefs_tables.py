@@ -13,7 +13,7 @@ from titicaca.db.sqlalchemy.models.base import JSONEncodedDict
 
 def _add_metadef_namespaces_table():
     op.create_table('metadef_namespaces',
-                    Column('id', Integer, nullable=False),
+                    Column('id', Integer(), nullable=False),
                     Column('namespace', String(length=80), nullable=False),
                     Column('display_name', String(length=80), nullable=True),
                     Column('description', Text(), nullable=True),

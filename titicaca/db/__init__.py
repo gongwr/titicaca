@@ -29,5 +29,4 @@ def unwrap(db_api):
 
 
 # attributes common to all models
-BASE_MODEL_ATTRS = set(['id', 'created_at', 'updated_at', 'deleted_at',
-                        'deleted'])
+BASE_MODEL_ATTRS = {'id', 'created_at', 'updated_at', 'deleted_at', 'deleted'}

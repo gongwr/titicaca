@@ -143,10 +143,12 @@ class ResourceOptionRegistry(object):
 
         if option.option_id in self._registered_options:
             raise ValueError(_('Option %(option_id)s already defined in '
-                               '%(registry)s.') % {'option_id': option.option_id, 'registry': self._registry_type})
+                               '%(registry)s.') % {'option_id': option.option_id,
+                                                   'registry': self._registry_type})
         if option.option_name in self.option_names:
             raise ValueError(_('Option %(option_name)s already defined in '
-                               '%(registry)s') % {'option_name': option.option_name, 'registry': self._registry_type})
+                               '%(registry)s') % {'option_name': option.option_name,
+                                                  'registry': self._registry_type})
         self._registered_options[option.option_id] = option
 
 

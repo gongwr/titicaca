@@ -5,7 +5,7 @@
 
 from oslo_db import exception as db_exc
 from oslo_log import log as logging
-import sqlalchemy.orm as sa_orm
+from sqlalchemy.exc import NoResultFound
 
 from titicaca.common import exception as exc
 from titicaca.db.sqlalchemy.metadef_api import namespace as namespace_api
@@ -55,7 +55,7 @@ def _get(context, namespace_name, resource_type_name,
         query = session.query(models.MetadefNamespaceResourceType).filter_by(
             namespace_id=namespace_id, resource_type_id=resource_type_id)
         db_rec = query.one()
-    except sa_orm.exc.NoResultFound:
+    except NoResultFound:
         LOG.debug("The metadata definition resource-type association of"
                   " resource_type=%(resource_type_name)s to"
                   " namespace_name=%(namespace_name)s was not found.",
@@ -194,7 +194,6 @@ def delete(context, namespace_name, resource_type_name, session):
 def delete_namespace_content(context, namespace_id, session):
     """Use this def only if the ns for the id has been verified as visible"""
 
-    count = 0
     query = session.query(models.MetadefNamespaceResourceType).filter_by(
         namespace_id=namespace_id)
     count = query.delete(synchronize_session='fetch')
