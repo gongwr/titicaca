@@ -1,5 +1,5 @@
 {
-    "namespace": "OS::Titicaca::Signatures",
+    "namespace": "OS::Everest::Signatures",
     "display_name": "Image Signature Verification",
     "description": "Image signature verification allows the user to verify that an image has not been modified prior to booting the image.",
     "visibility": "public",

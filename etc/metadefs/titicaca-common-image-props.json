@@ -1,7 +1,7 @@
 {
     "display_name": "Common Image Properties",
-    "namespace": "OS::Titicaca::CommonImageProperties",
-    "description": "When adding an image to Titicaca, you may specify some common image properties that may prove useful to consumers of your image.",
+    "namespace": "OS::Everest::CommonImageProperties",
+    "description": "When adding an image to Everest, you may specify some common image properties that may prove useful to consumers of your image.",
     "protected": true,
     "resource_type_associations" : [
     ],
@@ -10,13 +10,13 @@
             "title": "Kernel ID",
             "type": "string",
             "pattern": "^([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}$",
-            "description": "ID of image stored in Titicaca that should be used as the kernel when booting an AMI-style image."
+            "description": "ID of image stored in Everest that should be used as the kernel when booting an AMI-style image."
         },
         "ramdisk_id": {
             "title": "Ramdisk ID",
             "type": "string",
             "pattern": "^([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}$",
-            "description": "ID of image stored in Titicaca that should be used as the ramdisk when booting an AMI-style image."
+            "description": "ID of image stored in Everest that should be used as the ramdisk when booting an AMI-style image."
         },
         "instance_uuid": {
             "title": "Instance ID",

@@ -1,7 +1,7 @@
 {
     "namespace": "OS::Compute::LibvirtImage",
     "display_name": "libvirt Driver Options for Images",
-    "description": "The libvirt Compute Driver Options for Titicaca Images.  \n\nThese are properties specific to compute drivers.  For a list of all hypervisors, see here: https://wiki.openstack.org/wiki/HypervisorSupportMatrix.",
+    "description": "The libvirt Compute Driver Options for Everest Images.  \n\nThese are properties specific to compute drivers.  For a list of all hypervisors, see here: https://wiki.openstack.org/wiki/HypervisorSupportMatrix.",
     "visibility": "public",
     "protected": true,
     "resource_type_associations": [
